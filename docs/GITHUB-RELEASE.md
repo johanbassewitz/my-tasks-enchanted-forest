@@ -1,6 +1,10 @@
 # Publish My Tasks on GitHub
 
-The repository is prepared locally. No GitHub repository or release has been created from this session.
+Public source: https://github.com/johanbassewitz/my-tasks-enchanted-forest
+
+Windows downloads: https://github.com/johanbassewitz/my-tasks-enchanted-forest/releases/latest
+
+The first main-branch GitHub Actions run passed dependency installation, all tests, release validation and Windows NSIS installer packaging on October 8, 2026. The instructions below explain future releases and publishing a separate fork.
 
 ## What people will install
 
@@ -8,7 +12,7 @@ Users open your repository's **Releases**, download **My-Tasks-Setup-1.0.0-x64.e
 
 Supporting Electron files are placed in the normal installation folder; the desktop shows the app shortcut. This is ordinary desktop installation, not concealment or deletion of necessary runtime files. Task data stays separately in `%APPDATA%\My Tasks` and is preserved on uninstall.
 
-## Upload the source
+## Publish a separate fork
 
 1. Create an empty GitHub repository named `my-tasks` (or your preferred name). Choose its visibility yourself.
 2. Unzip `release/My-Tasks-GitHub-Source.zip`. Upload the **contents** of that ZIP to the repository, including `.github`, rather than uploading the ZIP as a single repository file. Use GitHub's Add file → Upload files, GitHub Desktop, or Git.

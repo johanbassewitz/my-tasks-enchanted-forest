@@ -2,7 +2,8 @@
 
 ## Actual results
 
-- GitHub release preparation: a clean isolated `npm ci --ignore-scripts --offline` installed 366 packages from the repaired lockfile; the preparation script was then run explicitly. The clean source bundle passed its production build and all 63 tests. The NSIS schema, shortcut/icon settings, legacy/modern build-tool compatibility, fixed registry dependency paths, workflow YAML and release permissions were validated. Full Electron download/install scripts and the remote GitHub workflow remain unexecuted in this environment.
+- GitHub release preparation: a clean isolated `npm ci --ignore-scripts --offline` installed 366 packages from the repaired lockfile; the preparation script was then run explicitly. The clean source bundle passed its production build and all 63 tests. The NSIS schema, shortcut/icon settings, legacy/modern build-tool compatibility, fixed registry dependency paths, workflow YAML and release permissions were validated.
+- Public source was uploaded to `johanbassewitz/my-tasks-enchanted-forest`. [GitHub Windows build #1](https://github.com/johanbassewitz/my-tasks-enchanted-forest/actions/runs/37766383637) completed successfully on October 8, 2026: full online `npm ci`, tests, release validation, production build, Windows x64 NSIS packaging, installer checksum and artifact upload. This verifies installer creation on a Windows runner, not execution on a physical desktop.
 
 - Production renderer build and both TypeScript configurations passed.
 - 63 automated tests in seven files passed on Windows using Vitest and real SQLite for repository/command/scheduler tests. The six Google setup tests cover direct login for configured clients, first-time import and immediate login, cancellation, secure-storage refusal, invalid client files and ignoring untrusted endpoint URLs. Two guide tests verify that setup actions accept only named destinations and use fixed official Google HTTPS URLs.
@@ -21,9 +22,9 @@
 
 Native Electron was launched in the managed Windows environment but Chromium failed to create its Mojo IPC channel with Access denied; the network sandbox also reported access restrictions. A fresh `npm run test:ui` attempt was blocked before test execution when Playwright worker creation failed with `spawn EPERM`. Sandbox protection was kept enabled. Consequently native window behavior, tray behavior, Windows toast/sound delivery, installer execution, OS credential encryption on this machine, real display scaling and physical sleep/resume are **not verified**. The supplied native Playwright smoke test should be run with `npm run test:ui` on an unrestricted Windows desktop.
 
-Electron-builder directory packaging failed when its dependency collector spawned npm (`EPERM`). NSIS tooling was unavailable offline. A pure JavaScript packaging path produced the folder portable instead. No NSIS installer or single-file portable is claimed. Per-user install/shortcut scripts were not run because they write outside the permitted workspace.
+Local Electron-builder directory packaging failed when its dependency collector spawned npm (`EPERM`). NSIS tooling was unavailable offline. A pure JavaScript packaging path produced the local folder portable. GitHub Actions subsequently produced the NSIS installer successfully. No single-file portable is claimed. Per-user install/shortcut scripts were not run because they write outside the permitted workspace.
 
-A later installer-build attempt with the GitHub release configuration passed compilation but was blocked downloading packaging/runtime resources (`ECONNREFUSED` at the managed network proxy). The GitHub Windows workflow will build a one-click per-user setup executable and create a draft release once the source is uploaded and a version tag is pushed. That remote build and native installer execution are not claimed as verified here.
+A local installer-build attempt passed compilation but was blocked downloading packaging/runtime resources (`ECONNREFUSED` at the managed network proxy). The GitHub Windows runner resolved that build limitation and produced the one-click per-user installer. Native installer execution remains unverified.
 
 ## Deliberate functional limits
 
@@ -38,4 +39,4 @@ A later installer-build attempt with the GitHub release configuration passed com
 
 1. Launch `release\My Tasks Portable\My Tasks.exe` on a normal Windows desktop; verify tray/window controls and use Settings → Test notification.
 2. Follow `GOOGLE-CALENDAR.md` to configure your own Desktop OAuth client and sign in. Verify one synced test event and phone Calendar permissions.
-3. If an NSIS installer is desired, run `Build-Windows.ps1` with normal network/process access. The provided per-user installation script can install the existing folder build immediately.
+3. Download the NSIS installer from the repository's Releases page. Maintainers can also rebuild using `Build-Windows.ps1` with normal network/process access.

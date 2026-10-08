@@ -4,13 +4,15 @@ A personal Windows desktop task and calendar app, built with Electron, React, Ty
 
 ## Install from GitHub
 
+[Download My Tasks for Windows](https://github.com/johanbassewitz/my-tasks-enchanted-forest/releases/latest) · [Source code](https://github.com/johanbassewitz/my-tasks-enchanted-forest)
+
 1. Open this repository's **Releases** page.
 2. Under **Assets**, download **My-Tasks-Setup-…-x64.exe**.
 3. Run the installer. It installs for your Windows user, creates the **My Tasks** desktop/Start menu icon, and opens the app.
 
 Afterward, open **My Tasks** from its icon. No Node.js, source files or launch scripts are required. The app's supporting files live in the installation folder, and your tasks stay in your Windows application-data folder. Use Windows Settings → Apps to uninstall; your task data is retained.
 
-The installer release must first be built and published by the repository owner. The included GitHub workflow prepares a draft release for review. See [publishing instructions](docs/GITHUB-RELEASE.md).
+The Windows installer is built by GitHub Actions. Future version tags prepare a draft release for review. See [publishing instructions](docs/GITHUB-RELEASE.md).
 
 ## Run the existing local portable build
 
