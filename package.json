@@ -1,0 +1,49 @@
+{
+  "name": "my-tasks-enchanted-forest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local enchanted forest task and calendar sanctuary",
+  "author": "My Tasks",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:desktop": "npm run build && electron .",
+    "build": "tsc --noEmit && vite build && tsc -p tsconfig.electron.json",
+    "test": "vitest run --pool=threads --maxWorkers=1",
+    "test:ui": "playwright test",
+    "dist": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "preview": "vite preview --host 127.0.0.1",
+    "postinstall": "node scripts/prepare-local.cjs",
+    "dist:folder": "npm run build && node scripts/package-portable.cjs",
+    "dist:installer": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "check:release": "node scripts/verify-release.cjs",
+    "source:zip": "python scripts/create-source-bundle.py"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "lucide-react": "1.41.0",
+    "luxon": "3.7.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "@types/node": "24.13.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.1",
+    "@vitejs/plugin-react": "6.0.3",
+    "vitest": "4.1.10",
+    "@playwright/test": "1.62.1",
+    "electron": "40.10.2",
+    "electron-builder": "26.15.3"
+  },
+  "overrides": {
+    "yauzl": "3.4.0",
+    "brace-expansion@<5": "5.0.9"
+  },
+  "productName": "My Tasks",
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

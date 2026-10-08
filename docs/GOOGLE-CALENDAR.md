@@ -1,0 +1,23 @@
+# Google Calendar setup
+
+My Tasks connects to Google through your system browser. You must supply your own **Desktop app** OAuth client; no Google account is bundled or simulated.
+
+**In-app guide:** Open Settings → Google Calendar → **Setup guide**. It walks through six short steps, opens the relevant Google pages in your browser, explains the JSON download, and finishes with **Choose JSON and sign in**. Back/Next and numbered steps let you revisit instructions. “Something went wrong?” covers common errors.
+
+1. Open the [Google Cloud console](https://console.cloud.google.com/), create/select a project, and enable **Google Calendar API**.
+2. Configure the OAuth consent screen. For a personal project in Testing, add your Google account as a test user. Google can expire testing refresh tokens; reconnect if authorization expires.
+3. Create an OAuth client with application type **Desktop app** and download its JSON file. Do not create a Web client or enter custom redirect URLs.
+4. In My Tasks → Settings → Google Calendar, click **Sign in with Google**. The first time, choose the downloaded JSON file. My Tasks validates and saves the application configuration, then automatically opens Google login in your normal browser. Future clicks open login directly, without selecting the file again. Choose your account and consent. A short-lived listener on `127.0.0.1` and a random available port receives the response. Return to My Tasks after the browser reports completion. Manual client fields remain available under advanced configuration.
+5. Select a writable calendar or use **Create My Tasks calendar**. Enable Google sync on each task/event you want to upload. Tasks need a date; date-only tasks become all-day Google events.
+
+The requested scopes are event read/write, writable calendar discovery, calendar creation, and OpenID email to show the actual signed-in account. The application uses PKCE and a random state nonce. Access/refresh tokens are saved only as OS-encrypted blobs through Electron safeStorage. Sign-in is disabled if encryption is unavailable. Tokens, credentials, and sync metadata are excluded from exported backups. Keep your local app data private. Desktop client configuration identifies your application; Google does not treat installed application client secrets as confidential.
+
+**Sync behavior.** Local edits enter a persistent outbox. Uploads use deterministic event IDs and ETags. Network failures remain queued with bounded exponential retry delay and respect Google Retry-After responses. An item shows Synced only after a successful Google response. In two-way mode, changes are fetched using paginated incremental sync tokens; an expired token causes a new full inventory. Existing unrelated Google events are imported only when Import existing events is enabled. Remote changes do not themselves enqueue uploads. A local/Google collision appears in conflict review; choosing Local explicitly overwrites against Google's latest ETag, while choosing Google preserves the remote version.
+
+**Deletion and completion.** Delete Google events controls whether deleting, unlinking or suppressing a completed local item also deletes its linked Google event. When disabled the Google event remains. Sync completed controls whether completed items remain uploaded. Individual recurring occurrence completion is local application state; Google Calendar events have no task completion field.
+
+**Recurrence limits.** Supported series export RRULE and EXDATE with their IANA timezone, including date-only exclusions. Locally edited occurrence exceptions cannot be uploaded: the item remains in Sync error with an explanation. Google recurring instance exceptions and advanced recurrence rules are left unchanged and reported; they are not flattened into an incorrect series. Edit those events in Google Calendar or keep them local. This version does not move an already linked event between Google calendars automatically; unlink it first, then select the destination and re-enable sync.
+
+**Disconnect.** Disconnect revokes the refresh/access credential at Google and always deletes the local encrypted token. If Google is unreachable, the application reports that revocation failed; remove the application's access from your Google account permissions page if needed. Reconnect to resume sync. Client configuration is retained locally.
+
+Protocol references: [Desktop OAuth and PKCE](https://developers.google.com/identity/protocols/oauth2/native-app), [incremental synchronization and token expiry](https://developers.google.com/workspace/calendar/api/guides/sync), [event updates and ETags](https://developers.google.com/workspace/calendar/api/v3/reference/events/update).

@@ -1,0 +1,33 @@
+appId: com.mytasks.forest
+productName: My Tasks
+copyright: Copyright © 2026 My Tasks
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - build/icon.png
+  - build/icon.ico
+  - package.json
+asar: true
+npmRebuild: false
+electronVersion: 40.10.2
+win:
+  icon: build/icon.ico
+  target:
+    - nsis
+    - portable
+  signAndEditExecutable: true
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  runAfterFinish: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: My Tasks
+  deleteAppDataOnUninstall: false
+  artifactName: My-Tasks-Setup-${version}-x64.${ext}
+portable:
+  artifactName: My-Tasks-Portable-${version}.${ext}

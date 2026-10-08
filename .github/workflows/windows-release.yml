@@ -1,0 +1,80 @@
+name: Windows build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "if(process.env.RELEASE_TAG!=='v'+require('./package.json').version)throw Error('Tag must match package.json version')"
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Validate release configuration
+        run: npm run check:release
+      - name: Build Windows installer
+        run: npm run dist:installer
+      - name: Checksum installer
+        run: node scripts/checksums.cjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: my-tasks-windows-installer
+          path: |
+            release/My-Tasks-Setup-*-x64.exe
+            release/SHA256SUMS-installer.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: my-tasks-windows-installer
+          path: release
+      - name: Prepare draft GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $files = @(Get-ChildItem -LiteralPath release -File | ForEach-Object { $_.FullName })
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:RELEASE_TAG @files --clobber --repo $env:GITHUB_REPOSITORY
+          } else {
+            gh release create $env:RELEASE_TAG @files --draft --verify-tag --title "My Tasks $env:RELEASE_TAG" --notes-file .github/RELEASE-NOTES.md --repo $env:GITHUB_REPOSITORY
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release upload failed.' }
