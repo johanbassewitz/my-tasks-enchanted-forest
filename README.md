@@ -40,6 +40,8 @@ Use **Ctrl+N** for Quick Add and **Ctrl+K** to search titles, notes, categories 
 
 On Tasks, switch between **Phases** and **List**. Phases groups the tasks of a bigger plan into numbered stages, each with optional start and end dates, a category and a colour. Use **New phase**, a phase's **Add task to this phase**, or **Add task without a phase**; move a task later with its **Phase** field, which can also create a phase on the spot. Give a task steps in its editor, or with **Add step** under the task's arrow. Each step can have a time and reminder, and on a one-time task its own date; reorder steps by dragging them or with the arrow keys. Ticking the last step completes the task, and each occurrence of a repeating task starts with fresh steps. Deleting a phase keeps its tasks. Phases and steps stay on this device and are not sent to Google Calendar.
 
+Priority is Low, Medium or High (under More task options, or `!high`, `!medium`, `!low` in Quick Add). High tasks are highlighted in red with a flag, Medium tasks get a yellow label, and Low tasks stay plain.
+
 Calendar defaults to Week and also offers Day and Month. Click a time slot to create an event. Drag events to move them while preserving duration. Drag their lower edge to resize, or focus the resize handle and use arrow keys; times snap to 15 minutes. Day includes anytime tasks. Recurring items support independent task completion, local occurrence exceptions and series editing. Read the Google limitations below before syncing advanced exceptions.
 
 Focus uses persisted deadlines rather than counting renderer ticks. Pause, resume, restart and sleep recovery use real elapsed time. Completed sessions, focused minutes and streaks derive from session history.

@@ -213,7 +213,7 @@ export function parseQuick(text:string,baseDate:string=iso()):Partial<Item> {
  take(/\b(?:next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,m=>{const target=['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].indexOf(m[1].toLowerCase())+1;const delta=(target-DateTime.fromISO(baseDate).weekday+7)%7;result.date=shift(baseDate,delta||7)});
  take(/\b(?:at\s+)?(\d{1,2})(?::([0-5]\d))?\s*(am|pm)\b/i,m=>{const h=Number(m[1]);if(h>=1&&h<=12)result.time=String(h%12+(m[3].toLowerCase()==='pm'?12:0)).padStart(2,'0')+':'+(m[2]||'00')});
  if(!result.time) take(/\b(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)\b/,m=>{result.time=m[1].padStart(2,'0')+':'+m[2]});
- take(/(?:^|\s)!(high|normal|low)\b/i,m=>{result.priority=(m[1][0].toUpperCase()+m[1].slice(1).toLowerCase()) as Item['priority']});
+ take(/(?:^|\s)!(high|normal|medium|low)\b/i,m=>{const p=m[1].toLowerCase();result.priority=p==='high'?'High':p==='low'?'Low':'Normal'});
  take(/\b(?:every\s+)?(daily|weekdays|weekly|monthly|yearly)\b/i,m=>{result.repeat=(m[1][0].toUpperCase()+m[1].slice(1).toLowerCase()) as Item['repeat'];result.interval=1});
  take(/(?:^|\s)#([\w-]+)/,m=>{result.category=m[1]});
  return {...result,title};

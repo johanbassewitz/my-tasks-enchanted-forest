@@ -35,3 +35,11 @@
 .phase-task-link{flex:1;text-align:left;background:none;border:0;padding:3px 0;font-size:12.5px;color:#dde2cc;cursor:pointer}.phase-task-link:hover{color:#f3eccd;text-decoration:underline}.phase-task-link.done{text-decoration:line-through;color:#9fb08f}
 .swatches{display:flex;gap:7px}.swatches button{width:18px;height:18px;padding:0;border-radius:50%;border:2px solid transparent}.swatches button.on{border-color:#f3f0d6;box-shadow:0 0 0 2px #0008}
 @media(max-width:900px){.phase-progress{display:none}.phase-body{padding-left:14px}.step-list{margin-left:12px}.steps-word{display:none}}
+/* Priority: High is red and highlighted, Medium (stored as Normal) is yellow, Low is plain */
+.priority-badge{display:flex;align-items:center;gap:4px;font-weight:600;letter-spacing:.3px}.priority-badge svg{width:11px;height:11px}
+.priority-badge.high{color:#ffc2b8;border-color:#e2655699;background:#6a1f18b3}.priority-badge.normal{color:#f2d77c;border-color:#d8b94c80;background:#4d3f1170}
+.task-row.priority-high{border-color:#d9574a99;border-left:4px solid #e65a4b;background:linear-gradient(110deg,#4b211ced,#1d2116eb 70%);box-shadow:inset 0 1px 0 #ffb4a812,0 0 14px #e65a4b30}
+.task-row.priority-high:hover{background:linear-gradient(100deg,#5a2822,#24291b 70%);border-color:#ec7b6dbb}
+.task-row.priority-high .task-title strong{color:#ffe1da}.task-row.priority-high .check{border-color:#f0a094}
+.task-row.priority-high.complete{border-left-color:#8a4a42;box-shadow:none;background:linear-gradient(110deg,#2d221ced,#141f16eb 70%)}.task-row.priority-high.complete .task-title strong{color:#c2b3ad}
+@media(max-width:1180px){.task-row>.priority-badge.high{display:flex}}
