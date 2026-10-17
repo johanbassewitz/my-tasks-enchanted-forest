@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
-import { occurrenceItems, scheduledAt, isDone, advanceFocus } from '../shared/domain';
+import { occurrenceItems, scheduledAt, isDone, isStepDone, advanceFocus } from '../shared/domain';
+import type { Item, ReminderRecord, Step } from '../shared/types';
 import { Repository } from './repository';
 export interface Alert {title:string;body:string;itemId?:string;reminderId?:string}
 export class ReminderScheduler {
@@ -7,15 +8,20 @@ export class ReminderScheduler {
  tick(now=Date.now()):void{
   const pending:Alert[]=[];this.repository.update(data=>{
    const existing=new Map(data.reminders.map(r=>[r.id,r]));const active=new Set<string>();
-   const maxDays=Math.ceil(Math.max(0,...data.items.flatMap(i=>[...i.reminders,...Object.values(i.exceptions).flatMap(p=>p.reminders??[])]))/1440)+1;
+   const maxDays=Math.ceil(Math.max(0,...data.items.flatMap(i=>[...i.reminders,...Object.values(i.exceptions).flatMap(p=>p.reminders??[]),...i.steps.flatMap(s=>s.reminders)]))/1440)+1;
+   const schedule=(item:Item,occurrenceDate:string,due:number,offset:number,step?:Step)=>{if(due<now-7*86400000)return;const id=step?`${item.id}:${step.id}:${occurrenceDate}:${offset}`:`${item.id}:${occurrenceDate}:${offset}`;const old=existing.get(id);active.add(id);const record:ReminderRecord={id,itemId:item.id,occurrenceDate,offset,due,deliveredAt:old&&old.due===due?old.deliveredAt:null,snoozedUntil:old?.snoozedUntil??null,title:step?`${item.title} · ${step.title}`:item.title,enabled:true};if(step)record.stepId=step.id;existing.set(id,record);};
    for(const zone of new Set(data.items.map(i=>i.timezone))){
     const local=DateTime.fromMillis(now,{zone});
     const dates=new Set(Array.from({length:Math.max(31,maxDays)+8},(_,index)=>local.plus({days:index-7}).toISODate()!));
     for(const item of data.items)if(item.repeat==='Never'&&item.date&&item.timezone===zone&&item.date>=local.plus({days:-7}).toISODate()!)dates.add(item.date);
+    // Steps of a one-time task may have their own date, or none on an anytime task.
+    for(const item of data.items){if(item.repeat!=='Never'||item.timezone!==zone||item.deletedAt||isDone(item,item.date))continue;for(const step of item.steps){const date=step.date||item.date;if(!date||!step.reminderEnabled||isStepDone(item,step,date))continue;for(const offset of step.reminders)schedule(item,item.date||date,scheduledAt({...item,time:step.time||(step.date?'':item.time)},date)-offset*60000,offset,step);}}
     for(const date of dates){
      for(const item of occurrenceItems(data.items.filter(i=>i.timezone===zone&&!i.deletedAt),date)){
-      if(!item.reminderEnabled||isDone(item,date))continue;
-      for(const offset of item.reminders){const due=scheduledAt(item,date)-offset*60000;if(due<now-7*86400000)continue;const id=`${item.id}:${item.occurrenceDate||date}:${offset}`;const old=existing.get(id);active.add(id);existing.set(id,{id,itemId:item.id,occurrenceDate:item.occurrenceDate||date,offset,due,deliveredAt:old&&old.due===due?old.deliveredAt:null,snoozedUntil:old?.snoozedUntil??null,title:item.title,enabled:true});}
+      if(isDone(item,date))continue;
+      if(item.repeat!=='Never')for(const step of item.steps)if(step.reminderEnabled&&!isStepDone(item,step,date))for(const offset of step.reminders)schedule(item,item.occurrenceDate||date,scheduledAt({...item,time:step.time||item.time},date)-offset*60000,offset,step);
+      if(!item.reminderEnabled)continue;
+      for(const offset of item.reminders)schedule(item,item.occurrenceDate||date,scheduledAt(item,date)-offset*60000,offset);
      }
     }
    }

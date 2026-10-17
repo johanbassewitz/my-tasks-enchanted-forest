@@ -1,5 +1,5 @@
 import {DateTime,IANAZone} from 'luxon';
-import type {Item,FocusState} from './types';
+import type {Item,FocusState,Phase,Step} from './types';
 
 export function iso(date:Date=new Date()):string {
  if(!Number.isFinite(date.getTime())) throw new Error('Invalid date');
@@ -37,6 +37,11 @@ export function validateItem(item:Item):Item {
  if(typeof item.done!=='boolean'||typeof item.synced!=='boolean'||typeof item.reminderEnabled!=='boolean'||!Number.isFinite(item.order)) throw new Error('Item status is invalid');
  if(!['Local only','Pending sync','Synced','Sync error','Conflict','Disconnected'].includes(item.syncState)) throw new Error('Sync state is invalid');
  if(item.deletedAt!==null&&(typeof item.deletedAt!=='string'||!Number.isFinite(Date.parse(item.deletedAt)))) throw new Error('Trash date is invalid');
+ if(typeof item.phaseId!=='string'||item.phaseId.length>200) throw new Error('Phase is invalid');
+ if(!Array.isArray(item.steps)||item.steps.length>100) throw new Error('Use up to 100 steps');
+ if(item.kind==='event'&&(item.phaseId||item.steps.length)) throw new Error('Only tasks can have steps or a phase. Remove them, or keep this item as a task.');
+ const steps=item.steps.map(step=>validateStep(step,item));
+ if(new Set(steps.map(step=>step.id)).size!==steps.length) throw new Error('Step IDs must be unique');
  if(!item.exceptions||typeof item.exceptions!=='object'||Array.isArray(item.exceptions)) throw new Error('Occurrence exceptions must be an object');
  const exceptions:Item['exceptions']={};
  for(const [date,patch] of Object.entries(item.exceptions)) {
@@ -45,7 +50,34 @@ export function validateItem(item:Item):Item {
   const clean=validateItem({...item,...patch,id:item.id,exceptions:{}});
   exceptions[date]={...patch,...(patch.title!==undefined?{title:clean.title}:{})};
  }
- return {...item,title:item.title.trim(),reminders:[...new Set(item.reminders)].sort((a,b)=>a-b),completedDates:[...new Set(item.completedDates)],excludedDates:[...new Set(item.excludedDates)],exceptions};
+ return {...item,title:item.title.trim(),steps,reminders:[...new Set(item.reminders)].sort((a,b)=>a-b),completedDates:[...new Set(item.completedDates)],excludedDates:[...new Set(item.excludedDates)],exceptions};
+}
+function validateStep(step:Step,item:Item):Step {
+ if(!step||typeof step!=='object') throw new Error('A step is invalid');
+ if(typeof step.id!=='string'||!step.id||step.id.length>200) throw new Error('Step ID is required');
+ if(typeof step.title!=='string'||!step.title.trim()) throw new Error('Every step needs a title');
+ if(step.title.length>500) throw new Error('Step titles must be 500 characters or fewer');
+ if(step.date!==''&&!validDate(step.date)) throw new Error(`Enter a valid date for step “${step.title.trim()}”`);
+ if(step.date&&item.repeat!=='Never') throw new Error('Steps of a repeating task follow each occurrence, so they cannot have their own date');
+ if(step.time!==''&&!validTime(step.time)) throw new Error(`Enter a valid time for step “${step.title.trim()}”`);
+ if(!Array.isArray(step.reminders)||step.reminders.length>5||step.reminders.some(x=>!Number.isInteger(x)||x<0||x>40320)) throw new Error('Use up to 5 reminders per step, from 0 to 40320 minutes before');
+ if(typeof step.reminderEnabled!=='boolean'||typeof step.done!=='boolean') throw new Error('Step status is invalid');
+ if(!Array.isArray(step.completedDates)||step.completedDates.some(d=>!validDate(d))) throw new Error('Step completion dates must be valid YYYY-MM-DD dates');
+ if((step.time||step.reminderEnabled&&step.reminders.length)&&!step.date&&!item.date) throw new Error(`Choose a date for step “${step.title.trim()}” or its task before adding a time or reminder`);
+ return {id:step.id,title:step.title.trim(),date:step.date,time:step.time,reminders:[...new Set(step.reminders)].sort((a,b)=>a-b),reminderEnabled:step.reminderEnabled,done:step.done,completedDates:[...new Set(step.completedDates)]};
+}
+export function validatePhase(phase:Phase):Phase {
+ if(!phase||typeof phase!=='object') throw new Error('A phase is required');
+ if(typeof phase.id!=='string'||!phase.id||phase.id.length>200) throw new Error('Phase ID is required');
+ if(typeof phase.title!=='string'||!phase.title.trim()) throw new Error('A phase name is required');
+ if(phase.title.length>200) throw new Error('Phase names must be 200 characters or fewer');
+ if(!Number.isFinite(phase.order)) throw new Error('Phase order is invalid');
+ for(const key of ['start','end'] as const) if(phase[key]!==''&&!validDate(phase[key])) throw new Error('Enter valid phase dates (YYYY-MM-DD)');
+ if(phase.start&&phase.end&&phase.end<phase.start) throw new Error('A phase must end on or after its start date');
+ if(typeof phase.category!=='string'||phase.category.length>200) throw new Error('Phase category is invalid');
+ if(typeof phase.color!=='string'||!/^#[0-9a-f]{6}$/i.test(phase.color)) throw new Error('Choose a phase colour');
+ for(const key of ['createdAt','updatedAt'] as const) if(typeof phase[key]!=='string') throw new Error(`${key} must be text`);
+ return {id:phase.id,title:phase.title.trim(),order:phase.order,start:phase.start,end:phase.end,category:phase.category,color:phase.color.toLowerCase(),createdAt:phase.createdAt,updatedAt:phase.updatedAt};
 }
 
 // Recurrence arithmetic operates on floating calendar dates. UTC is used only
@@ -91,6 +123,23 @@ export function isDone(item:Item,date:string):boolean {
 export function toggleCompletion(item:Item,date:string):Item {
  const key=originalDate(item,date);
  return {...item,...(item.repeat==='Never'?{done:!item.done}:{completedDates:isDone(item,date)?item.completedDates.filter(d=>d!==key):[...item.completedDates,key]}),updatedAt:new Date().toISOString()};
+}
+export function isStepDone(item:Item,step:Step,date:string):boolean {
+ return item.repeat==='Never'?step.done:step.completedDates.includes(originalDate(item,date));
+}
+export function stepProgress(item:Item,date:string):{done:number;total:number} {
+ return {done:item.steps.filter(step=>isStepDone(item,step,date)).length,total:item.steps.length};
+}
+/** Toggles one step. Finishing the last open step completes the task;
+ * reopening a step on a completed task reopens the task. */
+export function toggleStep(item:Item,stepId:string,date:string):Item {
+ const step=item.steps.find(s=>s.id===stepId);if(!step) throw new Error('Step no longer exists');
+ const key=originalDate(item,date),wasDone=isStepDone(item,step,date);
+ const steps=item.steps.map(s=>s.id!==stepId?s:item.repeat==='Never'?{...s,done:!wasDone}:{...s,completedDates:wasDone?s.completedDates.filter(d=>d!==key):[...s.completedDates,key]});
+ let next:Item={...item,steps,updatedAt:new Date().toISOString()};
+ const allDone=steps.every(s=>isStepDone(next,s,date)),taskDone=isDone(next,date);
+ if(allDone&&!taskDone||wasDone&&taskDone) next=toggleCompletion(next,date);
+ return next;
 }
 export function occurrenceItems(items:Item[],date:string):Item[] {
  if(!validDate(date)) throw new Error('Enter a valid occurrence date');
