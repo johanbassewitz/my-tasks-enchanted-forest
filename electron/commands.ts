@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { randomUUID } from 'node:crypto';
-import { Repository,itemSchema,settingsSchema,categoriesSchema } from './repository';
-import {toggleCompletion,focusRemaining,validateItem} from '../shared/domain';
+import { Repository,itemSchema,phaseSchema,settingsSchema,categoriesSchema } from './repository';
+import {toggleCompletion,toggleStep,focusRemaining,validateItem,validatePhase,isStepDone} from '../shared/domain';
 import type {Command,Item} from '../shared/types';
 import {googleSetupDestinations} from '../shared/google-guide';
 
@@ -11,7 +11,9 @@ export const commandSchema=z.discriminatedUnion('type',[
  z.object({type:z.literal('item.save'),item:itemSchema,scope,occurrenceDate:date.optional()}).strict(),
  z.object({type:z.literal('item.delete'),id,scope,occurrenceDate:date.optional()}).strict(),
  z.object({type:z.literal('item.restore'),id}).strict(),z.object({type:z.literal('item.complete'),id,date}).strict(),
- z.object({type:z.literal('item.reorder'),ids:z.array(id).max(100000)}).strict(),z.object({type:z.literal('categories.save'),categories:categoriesSchema,moveFrom:id.optional(),moveTo:id.optional()}).strict(),
+ z.object({type:z.literal('item.reorder'),ids:z.array(id).max(100000)}).strict(),
+ z.object({type:z.literal('step.complete'),id,stepId:id,date}).strict(),
+ z.object({type:z.literal('phase.save'),phase:phaseSchema,position:z.number().int().min(0).max(10000).optional()}).strict(),z.object({type:z.literal('phase.delete'),id}).strict(),z.object({type:z.literal('categories.save'),categories:categoriesSchema,moveFrom:id.optional(),moveTo:id.optional()}).strict(),
  z.object({type:z.literal('settings.save'),settings:settingsSchema}).strict(),
  z.object({type:z.literal('focus.action'),action:z.enum(['start','pause','resume','stop','configure']),duration:z.number().min(1).max(1440).optional(),task:z.string().max(1000).optional(),goal:z.string().max(1000).optional()}).strict(),
  z.object({type:z.literal('reminder.snooze'),id}).strict(),z.object({type:z.literal('reminder.dismiss'),id}).strict(),
@@ -28,14 +30,29 @@ export function applyCommand(repo:Repository,input:unknown):void {
    const touch=(item:Item)=>{item.updatedAt=new Date().toISOString();if(item.synced)item.syncState='Pending sync';changes.push(item.id);};
    if(c.type==='item.save'){
     const old=d.items.find(i=>i.id===c.item.id);const saved=validateItem(c.item);
+    if(saved.phaseId&&!d.phases.some(p=>p.id===saved.phaseId))throw new Error('That phase no longer exists. Choose another phase.');
+    // Ticking every step in the editor completes a one-time task, like ticking them in the list.
+    const allSteps=(item:Item)=>item.steps.length>0&&item.steps.every(step=>isStepDone(item,step,item.date));
+    if(saved.repeat==='Never'&&allSteps(saved)&&!(old&&old.repeat==='Never'&&allSteps(old)))saved.done=true;
     if(old){saved.remoteId=old.remoteId;saved.remoteEtag=old.remoteEtag;saved.remoteUpdated=old.remoteUpdated;saved.createdAt=old.createdAt;saved.deletedAt=old.deletedAt;}
     else{saved.remoteId='';saved.remoteEtag='';saved.remoteUpdated='';saved.createdAt=new Date().toISOString();saved.deletedAt=null;}
-    if(c.scope==='occurrence'){if(old?.synced)throw new Error('Edit the entire Google-linked series here, or edit this occurrence in Google Calendar. Individual edited occurrences are supported for local series.');if(!old||!c.occurrenceDate)throw new Error('Occurrence editing requires a series and date');const patch:Partial<Item>={};const base={...old,date:c.occurrenceDate};for(const key of ['title','date','time','end','timezone','category','priority','notes','location','reminders','reminderEnabled'] as const){if(JSON.stringify(saved[key])!==JSON.stringify(base[key]))(patch as Record<string,unknown>)[key]=saved[key];}if(Object.keys(patch).length)old.exceptions[c.occurrenceDate]=patch;else delete old.exceptions[c.occurrenceDate];touch(old);}
+    if(c.scope==='occurrence'){if(old?.synced)throw new Error('Edit the entire Google-linked series here, or edit this occurrence in Google Calendar. Individual edited occurrences are supported for local series.');if(!old||!c.occurrenceDate)throw new Error('Occurrence editing requires a series and date');const patch:Partial<Item>={};const base={...old,date:c.occurrenceDate};for(const key of ['title','date','time','end','timezone','category','priority','notes','location','reminders','reminderEnabled'] as const){if(JSON.stringify(saved[key])!==JSON.stringify(base[key]))(patch as Record<string,unknown>)[key]=saved[key];}if(Object.keys(patch).length)old.exceptions[c.occurrenceDate]=patch;else delete old.exceptions[c.occurrenceDate];old.steps=saved.steps;old.phaseId=saved.phaseId;touch(old);}
     else{delete saved.occurrenceDate;if(old?.synced&&!saved.synced&&old.remoteId)repo.enqueue(old.id,'delete');validateItem(saved);if(old)d.items[d.items.indexOf(old)]=saved;else d.items.push(saved);touch(saved);}
    }
    if(c.type==='item.delete'){const item=find(c.id);if(c.scope==='occurrence'){if(!c.occurrenceDate)throw new Error('Select an occurrence date');if(!item.excludedDates.includes(c.occurrenceDate))item.excludedDates.push(c.occurrenceDate);}else item.deletedAt=new Date().toISOString();touch(item);}
    if(c.type==='item.restore'){const item=find(c.id);item.deletedAt=null;touch(item);}
    if(c.type==='item.complete'){const item=find(c.id);const next=toggleCompletion(item,c.date);Object.assign(item,next);touch(item);}
+   if(c.type==='step.complete'){const item=find(c.id);Object.assign(item,toggleStep(item,c.stepId,c.date));touch(item);}
+   if(c.type==='phase.save'){
+    const saved=validatePhase(c.phase),old=d.phases.find(p=>p.id===saved.id),now=new Date().toISOString();
+    saved.createdAt=old?.createdAt||now;saved.updatedAt=now;
+    const others=d.phases.filter(p=>p.id!==saved.id).sort((a,b)=>a.order-b.order);
+    const at=c.position??(old?others.findIndex(p=>p.order>old.order):others.length);
+    others.splice(at<0?others.length:Math.min(at,others.length),0,saved);
+    others.forEach((p,order)=>p.order=order);d.phases=others;
+   }
+   // Deleting a phase keeps its tasks; they move to "Tasks without a phase".
+   if(c.type==='phase.delete'){if(!d.phases.some(p=>p.id===c.id))throw new Error('Phase no longer exists');d.phases=d.phases.filter(p=>p.id!==c.id).sort((a,b)=>a.order-b.order);d.phases.forEach((p,order)=>p.order=order);for(const item of d.items)if(item.phaseId===c.id)item.phaseId='';}
    if(c.type==='item.reorder'){for(const [order,itemId] of c.ids.entries()){const item=find(itemId);item.order=order;touch(item);}}
    if(c.type==='categories.save'){if(c.moveFrom&&c.moveTo){if(!c.categories.some(cat=>cat.name===c.moveTo))throw new Error('Destination category does not exist');for(const item of d.items)if(item.category===c.moveFrom){item.category=c.moveTo;touch(item);}}d.categories=c.categories;}
    if(c.type==='settings.save'){

@@ -1,14 +1,19 @@
 import {useEffect,useState,type FormEvent,type ReactNode} from 'react';
-import type {AppData,Item,Command} from '../shared/types';
-import {validateItem,isDone} from '../shared/domain';
-import {Icon,IconButton,offsets,reminderLabel} from './ui';
+import type {AppData,Item,Command,Step} from '../shared/types';
+import {validateItem,isDone,isStepDone,stepProgress} from '../shared/domain';
+import {newPhase,newStep} from '../shared/defaults';
+import {Icon,IconButton,offsets,reminderLabel,humanDate,clockTime,priorityLabel} from './ui';
 export interface EditSelection {item:Item;occurrenceDate:string;scope:'series'|'occurrence';isNew:boolean}
 export default function Editor({selection,data,onSave,onClose,onDelete,onChangeDirty,busy}:{selection:EditSelection;data:AppData;onSave:(c:Command)=>Promise<boolean>;onClose:()=>void;onDelete:()=>void;onChangeDirty:(dirty:boolean)=>void;busy:boolean}){
- const [item,setItem]=useState<Item>(selection.item),[more,setMore]=useState(!selection.isNew),[error,setError]=useState('');
- useEffect(()=>{setItem(selection.item);setMore(!selection.isNew);setError('');onChangeDirty(false)},[selection]);
- useEffect(()=>{if(!selection.isNew){const current=data.items.find(i=>i.id===selection.item.id);if(current)setItem(i=>({...i,done:isDone(current,selection.occurrenceDate)}))}},[data.items]);
+ const [item,setItem]=useState<Item>(selection.item),[more,setMore]=useState(!selection.isNew),[error,setError]=useState(''),[phaseName,setPhaseName]=useState<string|null>(null);
+ useEffect(()=>{setItem(selection.item);setMore(!selection.isNew);setError('');setPhaseName(null);onChangeDirty(false)},[selection]);
+ // Completion changes arrive from the main process; keep the rest of the draft.
+ useEffect(()=>{if(!selection.isNew){const current=data.items.find(i=>i.id===selection.item.id);if(current)setItem(i=>({...i,done:isDone(current,selection.occurrenceDate),steps:i.steps.map(s=>{const saved=current.steps.find(x=>x.id===s.id);return saved?{...s,done:saved.done,completedDates:saved.completedDates}:s})}))}},[data.items]);
  const edit=<K extends keyof Item>(key:K,value:Item[K])=>{setItem(x=>({...x,[key]:value}));setError('');onChangeDirty(true)};
  const field=(icon:string,label:string,control:ReactNode,extra=false)=><label className={`field ${extra?'extra-field':''}`}><Icon name={icon}/><span>{label}</span>{control}</label>;
+ // Events cannot have these; still show them on a converted task so they can be removed.
+ const taskParts=item.kind==='task'||!!item.phaseId||item.steps.length>0,phases=[...data.phases].sort((a,b)=>a.order-b.order);
+ const addPhase=async()=>{const title=(phaseName||'').trim();if(!title)return;const phase={...newPhase(phases.length),title};if(await onSave({type:'phase.save',phase})){edit('phaseId',phase.id);setPhaseName(null)}};
  const submit=async(e:FormEvent)=>{e.preventDefault();try{const valid=validateItem(item);if(valid.synced&&!valid.date)throw Error('Choose a date before adding this item to Google Calendar.');if(await onSave({type:'item.save',item:valid,scope:selection.scope,occurrenceDate:selection.occurrenceDate})){onChangeDirty(false);setError('')}}catch(err){setError((err as Error).message)}};
  return <section className="panel ornate editor"><div className="editor-header"><h3><Icon name="leaf"/>{selection.isNew?`New ${item.kind==='task'?'Task':'Event'}`:`${item.kind==='task'?'Task':'Event'} Details`}</h3><IconButton icon="x" label="Cancel editing" onClick={onClose}/></div><form id="task-form" className={more?'show-options':''} onSubmit={submit}>
  {!selection.isNew&&item.repeat!=='Never'&&<p className="scope-note">Editing {selection.scope==='occurrence'?`this occurrence · ${selection.occurrenceDate}`:'the entire series'}</p>}
@@ -16,6 +21,8 @@ export default function Editor({selection,data,onSave,onClose,onDelete,onChangeD
  {field('calendar-days','Date',<input type="date" aria-label="Date" value={item.date} onChange={e=>edit('date',e.target.value)}/>)}
  {field('clock-3','Time',<input type="time" aria-label="Start time" value={item.time} onChange={e=>edit('time',e.target.value)} step="900"/>)}
  {field('hourglass','End time',<input type="time" aria-label="End time" value={item.end} onChange={e=>edit('end',e.target.value)} step="900"/>,item.kind==='task')}
+ {taskParts&&field('layers','Phase',<select aria-label="Phase" value={item.phaseId} onChange={e=>{if(e.target.value==='new')setPhaseName('');else edit('phaseId',e.target.value)}}><option value="">No phase</option>{phases.map((p,i)=><option key={p.id} value={p.id}>{i+1} · {p.title}</option>)}<option value="new">New phase…</option></select>)}
+ {phaseName!==null&&<div className="inline-add"><input aria-label="New phase name" placeholder="Phase name…" autoFocus value={phaseName} maxLength={200} onChange={e=>setPhaseName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addPhase()}if(e.key==='Escape'){e.stopPropagation();setPhaseName(null)}}}/><button type="button" className="secondary" disabled={!phaseName.trim()||busy} onClick={addPhase}>Add</button><IconButton icon="x" label="Cancel new phase" onClick={()=>setPhaseName(null)}/></div>}
  {field('tags','Category',<select aria-label="Category" value={item.category} onChange={e=>edit('category',e.target.value)}>{data.categories.map(c=><option key={c.id}>{c.name}</option>)}</select>)}
  {field('list-checks','Type',<select aria-label="Item type" value={item.kind} onChange={e=>edit('kind',e.target.value as Item['kind'])}><option value="task">Task</option><option value="event">Event</option></select>,true)}
  {field('bell','Reminder',<input className="toggle" type="checkbox" aria-label="Enable reminders" checked={item.reminderEnabled} onChange={e=>edit('reminderEnabled',e.target.checked)}/>)}
@@ -26,15 +33,45 @@ export default function Editor({selection,data,onSave,onClose,onDelete,onChangeD
  {item.synced&&<><p className="scope-note">{data.google.connected?'Calendar event and phone reminders':'Saved locally until you connect Google in Settings.'}</p>{field('calendar','Calendar',<select aria-label="Google calendar for item" value={item.calendarId||data.settings.calendarId} onChange={e=>edit('calendarId',e.target.value)}><option value="">Default calendar</option>{data.google.calendars.map(c=><option key={c.id} value={c.id}>{c.summary}</option>)}</select>)}</>}
  {field('repeat-2','Repeat',<select aria-label="Repeat" value={item.repeat} onChange={e=>edit('repeat',e.target.value as Item['repeat'])} disabled={selection.scope==='occurrence'}>{['Never','Daily','Weekdays','Weekly','Monthly','Yearly','Custom'].map(v=><option key={v}>{v}</option>)}</select>,true)}
  {more&&item.repeat!=='Never'&&selection.scope==='series'&&<>{item.repeat==='Custom'&&field('repeat','Every (days)',<input aria-label="Repeat interval in days" type="number" min="1" max="365" value={item.interval} onChange={e=>edit('interval',Number(e.target.value))}/>)}{field('calendar-days','End repeat',<input aria-label="Recurrence end date" type="date" value={item.recurrenceEnd} onChange={e=>edit('recurrenceEnd',e.target.value)}/>)}{field('repeat','Count',<input aria-label="Occurrence count" type="number" min="1" max="10000" placeholder="Unlimited" value={item.recurrenceCount??''} onChange={e=>edit('recurrenceCount',e.target.value?Number(e.target.value):null)}/>)}</>}
- {field('flag','Priority',<select aria-label="Priority" value={item.priority} onChange={e=>edit('priority',e.target.value as Item['priority'])}>{['Low','Normal','High'].map(v=><option key={v}>{v}</option>)}</select>,true)}
+ {field('flag','Priority',<select aria-label="Priority" value={item.priority} onChange={e=>edit('priority',e.target.value as Item['priority'])}>{['Low','Normal','High'].map(v=><option key={v} value={v}>{priorityLabel(v)}</option>)}</select>,true)}
  {item.kind==='event'&&field('map-pin','Location',<input aria-label="Location" value={item.location} onChange={e=>edit('location',e.target.value)} placeholder="Optional"/>,true)}
  {field('globe','Time zone',<input aria-label="Item time zone" value={item.timezone} onChange={e=>edit('timezone',e.target.value)} list="timezones"/>,true)}
+ {taskParts&&<StepsEditor item={item} date={selection.occurrenceDate} timeFormat={data.settings.time} defaultReminders={data.settings.defaultReminders} saved={selection.isNew?[]:data.items.find(i=>i.id===item.id)?.steps.map(s=>s.id)||[]} onChange={steps=>edit('steps',steps)} onToggle={step=>onSave({type:'step.complete',id:item.id,stepId:step.id,date:selection.occurrenceDate})}/>}
  <button className="advanced-button" type="button" aria-expanded={more} onClick={()=>setMore(!more)}><Icon name={more?'chevron-up':'chevron-down'}/>{more?'Fewer task options':'More task options'}</button>
  <label className="notes-label" htmlFor="item-notes"><Icon name="notebook-pen"/> Notes</label><textarea className="notes" id="item-notes" value={item.notes} onChange={e=>edit('notes',e.target.value)} placeholder="A little detail for later…" maxLength={20000}/>
  {more&&selection.scope==='series'&&item.excludedDates.length>0&&<div className="scope-note">Hidden occurrences<div className="reminder-options">{item.excludedDates.map(d=><button className="reminder-chip" type="button" key={d} onClick={()=>edit('excludedDates',item.excludedDates.filter(x=>x!==d))}>Restore {d}</button>)}</div></div>}
  {error&&<p className="form-error" role="alert">{error}</p>}
  <button className="primary ornate" disabled={busy||selection.scope==='occurrence'&&item.synced} type="submit">{busy?'Saving…':selection.isNew?`Add ${item.kind==='task'?'Task':'Event'}`:'Save Changes'}</button>
- {!selection.isNew&&<div className="btn-row editor-actions"><button type="button" className="secondary" onClick={()=>onSave({type:'item.complete',id:item.id,date:selection.occurrenceDate})}>{item.done?'Uncomplete':'Complete'}</button><button className="danger" type="button" onClick={onDelete}><Icon name="trash-2"/>Delete</button></div>}
+ {!selection.isNew&&<div className="btn-row editor-actions"><button type="button" className="secondary" onClick={()=>onSave({type:'item.complete',id:item.id,date:selection.occurrenceDate})}>{item.done?'Uncomplete':'Complete'}</button><button className="danger" type="button" onClick={onDelete}><Icon name="trash"/>Delete</button></div>}
  <button type="button" className="cancel-edit" onClick={onClose}>Cancel</button><div className="editor-foot"><Icon name="hard-drive"/> Saved on this device{item.synced?` · ${data.google.connected?item.syncState:'Disconnected'}`:''}</div>
  </form></section>
+}
+
+function StepsEditor({item,date,timeFormat,defaultReminders,saved,onChange,onToggle}:{item:Item;date:string;timeFormat:'12'|'24';defaultReminders:number[];saved:string[];onChange:(steps:Step[])=>void;onToggle:(step:Step)=>void}){
+ const [title,setTitle]=useState(''),[details,setDetails]=useState<string|null>(null),[dragging,setDragging]=useState<string|null>(null);
+ const steps=item.steps,progress=stepProgress(item,date);
+ const update=(id:string,patch:Partial<Step>)=>onChange(steps.map(s=>s.id===id?{...s,...patch}:s));
+ const move=(from:number,to:number)=>{if(to<0||to>=steps.length||from===to)return;const next=[...steps];next.splice(to,0,...next.splice(from,1));onChange(next)};
+ const add=()=>{if(!title.trim())return;onChange([...steps,{...newStep(title.trim()),reminders:defaultReminders.length?[...defaultReminders]:[10]}]);setTitle('')};
+ // Saved steps are ticked at once, like the task's Complete button; new ones are ticked in the draft.
+ const toggle=(step:Step)=>{if(saved.includes(step.id))onToggle(step);else update(step.id,item.repeat==='Never'?{done:!step.done}:{completedDates:isStepDone(item,step,date)?step.completedDates.filter(d=>d!==(item.occurrenceDate??date)):[...step.completedDates,item.occurrenceDate??date]})};
+ const when=(step:Step)=>[step.date&&humanDate(step.date),step.time&&clockTime(step.time,timeFormat)].filter(Boolean).join(' · ');
+ return <div className="steps-editor"><div className="steps-head"><span><Icon name="list-todo"/>Steps</span>{steps.length>0&&<small>{progress.done} of {progress.total}</small>}</div>
+  {steps.length>0&&<div className="progress-track" role="progressbar" aria-label="Steps completed" aria-valuenow={progress.done} aria-valuemax={progress.total}><div className="progress-fill" style={{width:`${progress.done/progress.total*100}%`}}/></div>}
+  {steps.map((step,index)=>{const done=isStepDone(item,step,date);return <div key={step.id} className={`step-edit ${dragging===step.id?'dragging':''}`} draggable onDragStart={e=>{setDragging(step.id);e.dataTransfer.setData('application/my-tasks-step',step.id)}} onDragEnd={()=>setDragging(null)} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const from=steps.findIndex(s=>s.id===e.dataTransfer.getData('application/my-tasks-step'));if(from>=0)move(from,index);setDragging(null)}}>
+   <div className="step-line"><button type="button" className="step-grip" aria-label={`Move step ${step.title} (use arrow keys)`} title="Drag, or use arrow keys, to reorder" onKeyDown={e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();move(index,index+(e.key==='ArrowUp'?-1:1))}}}><Icon name="grip-vertical"/></button>
+    <button type="button" className={`check ${done?'checked':''}`} role="checkbox" aria-checked={done} aria-label={`${done?'Uncomplete':'Complete'} step ${step.title}`} onClick={()=>toggle(step)}>{done&&<Icon name="check"/>}</button>
+    <input className={done?'done':''} aria-label={`Step ${index+1} title`} value={step.title} maxLength={500} onChange={e=>update(step.id,{title:e.target.value})}/>
+    <button type="button" className={`step-when ${when(step)||step.reminderEnabled?'set':''}`} aria-expanded={details===step.id} aria-label={`Date, time and reminder for step ${step.title}`} onClick={()=>setDetails(details===step.id?null:step.id)}>{step.reminderEnabled&&<Icon name="bell"/>}{when(step)||<Icon name="clock-3"/>}</button>
+    <IconButton icon="x" label={`Remove step ${step.title}`} onClick={()=>onChange(steps.filter(s=>s.id!==step.id))}/></div>
+   {details===step.id&&<div className="step-details">
+    {item.repeat==='Never'?<label>Date<input type="date" aria-label={`Date for step ${step.title}`} value={step.date} onChange={e=>update(step.id,{date:e.target.value})}/></label>:<small>Follows each occurrence’s date.</small>}
+    <label>Time<input type="time" step="900" aria-label={`Time for step ${step.title}`} value={step.time} onChange={e=>update(step.id,{time:e.target.value})}/></label>
+    <label>Reminder<input className="toggle" type="checkbox" aria-label={`Enable reminder for step ${step.title}`} checked={step.reminderEnabled} onChange={e=>update(step.id,{reminderEnabled:e.target.checked})}/></label>
+    {step.reminderEnabled&&<div className="reminder-options">{step.reminders.map(m=><button type="button" className="reminder-chip" key={m} aria-label={`Remove ${reminderLabel(m)} from step ${step.title}`} onClick={()=>update(step.id,{reminders:step.reminders.filter(x=>x!==m)})}>{reminderLabel(m)} ×</button>)}<select aria-label={`Add reminder to step ${step.title}`} value="" onChange={e=>{if(e.target.value!=='')update(step.id,{reminders:Array.from(new Set([...step.reminders,Number(e.target.value)])).sort((a,b)=>a-b)})}}><option value="">+ Add reminder</option>{offsets.filter(m=>!step.reminders.includes(m)).map(m=><option key={m} value={m}>{reminderLabel(m)}</option>)}</select>{!step.time&&<small>Without a time, the step uses its task’s time, or 9:00 AM.</small>}</div>}
+   </div>}
+  </div>})}
+  <div className="step-add"><Icon name="plus"/><input aria-label="Add a step" placeholder="Add a step…" value={title} maxLength={500} onChange={e=>setTitle(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();add()}}} onBlur={add}/></div>
+  {steps.length>0&&<small className="steps-hint">Finishing every step completes the task.</small>}
+ </div>
 }

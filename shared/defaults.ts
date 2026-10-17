@@ -1,4 +1,4 @@
-import type {AppData,Item,Settings} from './types';
+import type {AppData,Item,Phase,Settings,Step} from './types';
 import {iso,shift} from './domain';
 const zone=()=>Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 export function defaultSettings():Settings {
@@ -6,7 +6,15 @@ export function defaultSettings():Settings {
 }
 export function newItem(kind:'task'|'event'='task',date:string=iso()):Item {
  const now=new Date().toISOString();
- return {id:crypto.randomUUID(),kind,title:'',date,time:'',end:'',timezone:zone(),category:'Personal',priority:'Normal',notes:'',location:'',done:false,repeat:'Never',interval:1,recurrenceEnd:'',recurrenceCount:null,completedDates:[],excludedDates:[],exceptions:{},reminders:[10],reminderEnabled:false,synced:false,calendarId:'',syncState:'Local only',remoteId:'',remoteEtag:'',remoteUpdated:'',createdAt:now,updatedAt:now,order:0,deletedAt:null};
+ return {id:crypto.randomUUID(),kind,title:'',date,time:'',end:'',timezone:zone(),category:'Personal',priority:'Normal',notes:'',location:'',done:false,repeat:'Never',interval:1,recurrenceEnd:'',recurrenceCount:null,completedDates:[],excludedDates:[],exceptions:{},reminders:[10],reminderEnabled:false,synced:false,calendarId:'',syncState:'Local only',remoteId:'',remoteEtag:'',remoteUpdated:'',createdAt:now,updatedAt:now,order:0,deletedAt:null,phaseId:'',steps:[]};
+}
+export function newStep(title=''):Step {
+ return {id:crypto.randomUUID(),title,date:'',time:'',reminders:[10],reminderEnabled:false,done:false,completedDates:[]};
+}
+export const phaseColors=['#8bdd62','#d7bd78','#82b4cf','#d7a178','#db9eb0','#b39ad6'];
+export function newPhase(order=0):Phase {
+ const now=new Date().toISOString();
+ return {id:crypto.randomUUID(),title:'',order,start:'',end:'',category:'',color:phaseColors[order%phaseColors.length],createdAt:now,updatedAt:now};
 }
 export function createInitialData():AppData {
  const today=iso();const weekday=(day:number)=>{const delta=(day-new Date(today+'T12:00:00').getDay()+7)%7;return shift(today,delta||7)};
@@ -15,5 +23,5 @@ export function createInitialData():AppData {
  const events=[{title:'Dentist Appointment',date:shift(today,1),time:'15:00',end:'16:00',category:'Health',location:'Dental clinic'},{title:'University Lecture',date:weekday(4),time:'10:00',end:'12:00',category:'Study',location:'University campus'},{title:'Dinner',date:weekday(5),time:'20:00',end:'21:00',category:'Personal',location:''}];
  events.forEach((event,i)=>items.push({...newItem('event',event.date),...event,order:6+i,reminders:[30],reminderEnabled:true}));
  const names=[['Personal','leaf'],['Study','book-open'],['Work','laptop'],['Gym','dumbbell'],['Health','heart-pulse'],['Routine','moon'],['Appointments','calendar-check'],['Social','users'],['Shopping','shopping-bag'],['Other','sparkles']];
- return {version:1,items,categories:names.map(([name,icon],i)=>({id:'cat'+i,name,icon,accent:['#8bdd62','#d7bd78','#82b4cf','#d7a178','#db9eb0'][i%5]})),settings:defaultSettings(),focus:{duration:25,remaining:1500,deadline:null,running:false,task:'',goal:'One small step forward',sessionId:crypto.randomUUID(),history:[]},reminders:[],google:{configured:false,connected:false,account:'',calendars:[],lastSync:'',error:'',secureStorage:false,syncing:false},conflicts:[],dataPath:''};
+ return {version:1,items,phases:[],categories:names.map(([name,icon],i)=>({id:'cat'+i,name,icon,accent:['#8bdd62','#d7bd78','#82b4cf','#d7a178','#db9eb0'][i%5]})),settings:defaultSettings(),focus:{duration:25,remaining:1500,deadline:null,running:false,task:'',goal:'One small step forward',sessionId:crypto.randomUUID(),history:[]},reminders:[],google:{configured:false,connected:false,account:'',calendars:[],lastSync:'',error:'',secureStorage:false,syncing:false},conflicts:[],dataPath:''};
 }
