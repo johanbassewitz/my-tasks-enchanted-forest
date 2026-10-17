@@ -8,7 +8,7 @@ The first main-branch GitHub Actions run passed dependency installation, all tes
 
 ## What people will install
 
-Users open your repository's **Releases**, download **My-Tasks-Setup-1.0.0-x64.exe**, and run it. The one-click installer installs for their Windows user and creates **My Tasks** shortcuts on the Desktop and Start menu. The application opens after installation. Node.js, PowerShell launch scripts and source files are not part of the user's installation steps.
+Users open your repository's **Releases**, download **My-Tasks-Setup-1.1.0-x64.exe** (the number is the release version), and run it. The one-click installer installs for their Windows user and creates **My Tasks** shortcuts on the Desktop and Start menu. The application opens after installation. Node.js, PowerShell launch scripts and source files are not part of the user's installation steps.
 
 Supporting Electron files are placed in the normal installation folder; the desktop shows the app shortcut. This is ordinary desktop installation, not concealment or deletion of necessary runtime files. Task data stays separately in `%APPDATA%\My Tasks` and is preserved on uninstall.
 
@@ -57,7 +57,7 @@ npm run check:release
 npm run dist:installer
 ```
 
-Output: `release/My-Tasks-Setup-1.0.0-x64.exe`. `Build-Windows.ps1` also builds the installer and single-file portable option. The fallback folder portable remains available via `Build-Windows.ps1 -PortableFolderOnly`.
+Output: `release/My-Tasks-Setup-1.1.0-x64.exe`. `Build-Windows.ps1` also builds the installer and single-file portable option. The fallback folder portable remains available via `Build-Windows.ps1 -PortableFolderOnly`.
 
 The installer could not be built or executed inside the managed environment used for initial development. GitHub Actions is configured but has not been run remotely yet; do not describe the first release as verified until the workflow and native install checks succeed. Binaries remain unsigned until you configure Windows code signing. No automatic updater is included; users install later release installers normally.
 

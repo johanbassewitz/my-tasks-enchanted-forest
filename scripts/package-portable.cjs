@@ -25,7 +25,7 @@ if(!updateOnly){
 fs.copyFileSync(path.join(target,'electron.exe'),exePath);
 const exe=NtExecutable.from(fs.readFileSync(exePath));const resources=NtExecutableResource.from(exe);
 const vi=Resource.VersionInfo.fromEntries(resources.entries)[0]||Resource.VersionInfo.createEmpty();
-vi.setStringValues({lang:1033,codepage:1200},{CompanyName:'My Tasks',FileDescription:'My Tasks — Enchanted Forest',ProductName:'My Tasks',InternalName:'MyTasks',OriginalFilename:'My Tasks.exe',FileVersion:'1.0.0',ProductVersion:'1.0.0'});vi.setFileVersion(1,0,0,0);vi.setProductVersion(1,0,0,0);vi.outputToResourceEntries(resources.entries);
+vi.setStringValues({lang:1033,codepage:1200},{CompanyName:'My Tasks',FileDescription:'My Tasks — Enchanted Forest',ProductName:'My Tasks',InternalName:'MyTasks',OriginalFilename:'My Tasks.exe',FileVersion:pkg.version,ProductVersion:pkg.version});const [major,minor,patch]=pkg.version.split('.').map(Number);vi.setFileVersion(major,minor,patch,0);vi.setProductVersion(major,minor,patch,0);vi.outputToResourceEntries(resources.entries);
 const icon=Data.IconFile.from(fs.readFileSync(path.join(root,'build','icon.ico')));
 Resource.IconGroupEntry.replaceIconsForResource(resources.entries,1,1033,icon.icons.map(i=>i.data));resources.outputResource(exe);fs.writeFileSync(exePath,Buffer.from(exe.generate()));
 fs.unlinkSync(path.join(target,'electron.exe'));

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - Phases, tasks and steps: group tasks into ordered phases (dates, category, colour) and break tasks into steps with their own date, time and reminder. Finishing every step completes the task. The Tasks page gains a Phases view next to the existing List view.
 - Priority colours: High tasks are highlighted in red with a flag badge, Medium (formerly shown as Normal) has a yellow badge, Low stays plain. Quick Add accepts `!medium`.
