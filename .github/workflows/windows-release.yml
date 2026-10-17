@@ -83,11 +83,15 @@ jobs:
           # A tag push releases that tag; a manual run on main tags this commit with the package.json version.
           $tag = if ($env:MANUAL -eq 'true') { 'v' + (Get-Content package.json -Raw | ConvertFrom-Json).version } else { $env:GITHUB_REF_NAME }
           $files = @(Get-ChildItem -LiteralPath release -File | ForEach-Object { $_.FullName })
+          # Fill the notes template; the installer link needs the exact tag and version.
+          $notes = (Get-Content .github/RELEASE-NOTES.md -Raw).Replace('{{REPO}}', $env:GITHUB_REPOSITORY).Replace('{{TAG}}', $tag).Replace('{{VERSION}}', $tag.TrimStart('v'))
+          Set-Content -LiteralPath release-notes.md -Value $notes -Encoding utf8NoBOM
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag @files --clobber --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -eq 0) { gh release edit $tag --notes-file release-notes.md --repo $env:GITHUB_REPOSITORY }
           } else {
-            $options = @('--title', "My Tasks $tag", '--notes-file', '.github/RELEASE-NOTES.md', '--repo', $env:GITHUB_REPOSITORY)
+            $options = @('--title', "My Tasks $tag", '--notes-file', 'release-notes.md', '--repo', $env:GITHUB_REPOSITORY)
             if ($env:DRAFT -eq 'true') { $options += '--draft' }
             if ($env:MANUAL -eq 'true') { $options += @('--target', $env:GITHUB_SHA) } else { $options += '--verify-tag' }
             gh release create $tag @files @options
