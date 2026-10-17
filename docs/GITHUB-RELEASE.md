@@ -63,7 +63,7 @@ The installer could not be built or executed inside the managed environment used
 
 ## Release another version
 
-Use `npm version patch --no-git-tag-version` to update package and lockfile versions, review `CHANGELOG.md`, commit the changes and push a matching `vX.Y.Z` tag. Installer filenames and checksums use the package version. Keep the app ID stable so installed upgrades retain the same identity and data location.
+Use `npm version patch --no-git-tag-version` to update package and lockfile versions, review `CHANGELOG.md`, commit the changes and push a matching `vX.Y.Z` tag. Without pushing a tag, you can instead open **Actions → Windows build and release → Run workflow** on `main` and tick **Also publish a GitHub release**: it tags that commit with the `package.json` version and attaches the installer. Leave **Keep that release as a draft** ticked to review it before publishing. Installer filenames and checksums use the package version. Keep the app ID stable so installed upgrades retain the same identity and data location.
 
 ## Google Calendar for other people
 
