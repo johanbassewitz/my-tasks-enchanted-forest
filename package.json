@@ -17,7 +17,8 @@
     "dist:folder": "npm run build && node scripts/package-portable.cjs",
     "dist:installer": "npm run build && electron-builder --win nsis --x64 --publish never",
     "check:release": "node scripts/verify-release.cjs",
-    "source:zip": "python scripts/create-source-bundle.py"
+    "source:zip": "python scripts/create-source-bundle.py",
+    "prebuild": "node scripts/clean-build.cjs"
   },
   "dependencies": {
     "react": "19.2.8",
@@ -45,5 +46,6 @@
   "productName": "My Tasks",
   "engines": {
     "node": ">=24.0.0"
-  }
+  },
+  "feedbackEndpoint": ""
 }

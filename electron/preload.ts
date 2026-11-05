@@ -1,6 +1,8 @@
 import { contextBridge,ipcRenderer } from 'electron';
 import type { AppData, DesktopAPI, Command } from '../shared/types';
 const api:DesktopAPI={
+ feedbackAvailable:()=>ipcRenderer.invoke('desktop:feedbackAvailable'),
+ sendFeedback:input=>ipcRenderer.invoke('desktop:feedback',input),
  getData:()=>ipcRenderer.invoke('desktop:getData'),
  command:(command:Command)=>ipcRenderer.invoke('desktop:command',command),
  window:action=>ipcRenderer.invoke('desktop:window',action),

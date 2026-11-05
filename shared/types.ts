@@ -46,11 +46,10 @@ export type Command =
  | {type:'reminder.snooze';id:string}
  | {type:'reminder.dismiss';id:string}
  | {type:'notification.test'}
- | {type:'google.connect'}|{type:'google.disconnect'}|{type:'google.sync'}|{type:'google.createCalendar'}
- | {type:'google.openSetup';destination:import('./google-guide').GoogleSetupDestination}
- | {type:'conflict.resolve';id:string;choice:'local'|'remote'}
  | {type:'data.export'}|{type:'data.import'}|{type:'data.openFolder'};
 export interface DesktopAPI {
+ feedbackAvailable():Promise<boolean>;
+ sendFeedback(input:import('./feedback').FeedbackInput):Promise<void>;
  getData():Promise<AppData>; command(command:Command):Promise<AppData>;
  window(action:'minimize'|'maximize'|'close'|'quit'):Promise<void>;
  onData(callback:(data:AppData)=>void):()=>void;

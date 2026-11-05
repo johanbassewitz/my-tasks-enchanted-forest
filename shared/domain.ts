@@ -20,7 +20,7 @@ export function validateItem(item:Item):Item {
  if(typeof item.title!=='string'||!item.title.trim()) throw new Error('A title is required');
  if(item.title.length>500) throw new Error('Title must be 500 characters or fewer');
  if(item.date!==''&&!validDate(item.date)) throw new Error('Enter a valid date (YYYY-MM-DD)');
- if(!item.date&&(item.kind==='event'||item.repeat!=='Never'||item.synced||item.time)) throw new Error('Choose a date for an event, a timed task, recurrence, or Google Calendar synchronization');
+ if(!item.date&&(item.kind==='event'||item.repeat!=='Never'||item.time)) throw new Error('Choose a date for an event, a timed task, or recurrence');
  if(item.time!==''&&!validTime(item.time)) throw new Error('Enter a valid start time (HH:mm)');
  if(item.end!==''&&!validTime(item.end)) throw new Error('Enter a valid end time (HH:mm)');
  if(item.end&&(!item.time||minute(item.end)<=minute(item.time))) throw new Error('End time must follow start time on the same day');
