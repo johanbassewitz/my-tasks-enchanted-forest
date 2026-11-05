@@ -17,7 +17,7 @@ describe('calendar dates and recurrence',()=>{
 });
 describe('validation and scheduling',()=>{
  it('schedules a date-only local reminder at nine in its own time zone',()=>expect(new Date(scheduledAt(item({time:'',timezone:'UTC'}),'2026-10-08')).toISOString()).toBe('2026-10-08T09:00:00.000Z'));
- it('accepts undated anytime tasks but requires dates for recurrence and synchronization',()=>{expect(validateItem(item({date:'',time:'',repeat:'Never'})).date).toBe('');expect(()=>validateItem(item({date:'',repeat:'Daily'}))).toThrow();expect(()=>validateItem(item({date:'',synced:true}))).toThrow()});
+ it('accepts undated anytime tasks but requires dates for recurrence and timed tasks',()=>{expect(validateItem(item({date:'',time:'',repeat:'Never'})).date).toBe('');expect(()=>validateItem(item({date:'',repeat:'Daily'}))).toThrow();expect(()=>validateItem(item({date:'',time:'12:00'}))).toThrow()});
  it.each([{date:'2026-02-30'},{time:'25:00'},{time:'10:00',end:'09:00'},{timezone:'Moon/Base'},{reminders:[40321]},{reminders:[1,2,3,4,5,6]},{title:' '},{interval:0}])('rejects malformed schedule %j',p=>expect(()=>validateItem(item(p))).toThrow());
  it('trims title and accepts an all day item',()=>expect(validateItem(item({title:' Fine ',time:'',end:''})).title).toBe('Fine'));
  it('maintains wall-clock time across daylight saving',()=>{const x=item({time:'09:00',timezone:'America/New_York'});expect(new Date(scheduledAt(x,'2026-03-07')).toISOString()).toBe('2026-03-07T14:00:00.000Z');expect(new Date(scheduledAt(x,'2026-03-08')).toISOString()).toBe('2026-03-08T13:00:00.000Z')});

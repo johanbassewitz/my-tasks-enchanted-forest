@@ -5,6 +5,7 @@ import type { AppData, Item, Phase, Settings } from '../shared/types';
 import { validateItem,validatePhase } from '../shared/domain';
 import { createInitialData } from '../shared/defaults';
 import { normalizeBackup } from '../shared/backup';
+import { makeLocalOnly } from '../shared/local-only';
 import { migrate } from './migrations';
 
 const date=z.string().regex(/^(|\d{4}-\d{2}-\d{2})$/);const short=z.string().max(1000);const strings=z.array(short).max(10000);
@@ -22,7 +23,7 @@ export class Repository {
  }
  private transaction<T>(fn:()=>T):()=>T{return()=>{this.db.exec('BEGIN IMMEDIATE');try{const result=fn();this.db.exec('COMMIT');return result;}catch(error){this.db.exec('ROLLBACK');throw error;}};}
  getData():AppData{return JSON.parse((this.db.prepare('SELECT json FROM state WHERE id=1').get() as {json:string}).json);}
- update(mutator:(data:AppData)=>void):AppData{return this.transaction(()=>{const data=this.getData();mutator(data);data.settings.googleClientSecret='';this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(data));return data;})();}
+ update(mutator:(data:AppData)=>void):AppData{return this.transaction(()=>{const data=this.getData();mutator(data);makeLocalOnly(data);this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(data));return data;})();}
  getMeta<T=unknown>(key:string):T|undefined{const row=this.db.prepare('SELECT value FROM metadata WHERE key=?').get(key) as {value:string}|undefined;return row?JSON.parse(row.value):undefined;}
  setMeta(key:string,value:unknown):void{if(value===undefined)this.db.prepare('DELETE FROM metadata WHERE key=?').run(key);else this.db.prepare('INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(key,JSON.stringify(value));}
  enqueue(itemId:string,action:'upsert'|'delete'='upsert'):void{this.db.prepare('INSERT INTO outbox(itemId,action) VALUES(?,?) ON CONFLICT(itemId) DO UPDATE SET action=excluded.action').run(itemId,action);}
@@ -34,7 +35,7 @@ export class Repository {
   if(raw.length>50_000_000)throw new Error('Backup is too large');const input=normalizeBackup(JSON.parse(raw));
   const schema=z.object({version:z.literal(1),items:z.array(itemSchema).max(100000),phases:z.array(phaseSchema).max(10000).default([]),categories:categoriesSchema,settings:settingsSchema,focus:z.object({duration:z.number().min(1).max(1440),remaining:z.number().min(0),deadline:z.number().nullable(),running:z.boolean(),task:short,goal:short,sessionId:short,history:z.array(z.object({id:short,date:short,minutes:z.number(),task:short,goal:short,completedAt:z.number()})).max(100000)}),reminders:z.array(z.unknown()),google:z.unknown(),conflicts:z.array(z.unknown()),dataPath:z.string()});
   const parsed=schema.parse(input);if(new Set(parsed.items.map(i=>i.id)).size!==parsed.items.length)throw new Error('Duplicate item identifiers');if(new Set(parsed.phases.map(p=>p.id)).size!==parsed.phases.length)throw new Error('Duplicate phase identifiers');const phaseIds=new Set(parsed.phases.map(p=>p.id));for(const item of parsed.items)if(!phaseIds.has(item.phaseId))item.phaseId='';
-  this.transaction(()=>{this.setMeta('backup.beforeImport',this.exportBackup());const old=this.getData();const next={...old,...parsed,reminders:[],conflicts:[],google:old.google,dataPath:old.dataPath} as AppData;next.settings.googleClientSecret='';next.focus.running=false;next.focus.deadline=null;for(const item of next.items){item.remoteId='';item.remoteEtag='';item.remoteUpdated='';item.synced=false;item.syncState='Local only';}this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(next));this.db.exec('DELETE FROM outbox');})();
+  this.transaction(()=>{this.setMeta('backup.beforeImport',this.exportBackup());const old=this.getData();const next={...old,...parsed,reminders:[],conflicts:[],google:old.google,dataPath:old.dataPath} as AppData;makeLocalOnly(next);next.focus.running=false;next.focus.deadline=null;for(const item of next.items){item.remoteId='';item.remoteEtag='';item.remoteUpdated='';item.synced=false;item.syncState='Local only';}this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(next));this.db.exec('DELETE FROM outbox');})();
  }
  close():void{this.db.close();}
 }

@@ -38,11 +38,11 @@ Home shows real daily completion, the mini calendar, upcoming items and a focus 
 
 Use **Ctrl+N** for Quick Add and **Ctrl+K** to search titles, notes, categories and locations. Quick Add shows a review before saving. Right-click or use an item's three-dot menu for actions. Deleted items are recoverable in Tasks → Trash. Drag task rows or category cards to reorder; category cards also have keyboard-accessible arrow controls.
 
-On Tasks, switch between **Phases** and **List**. Phases groups the tasks of a bigger plan into numbered stages, each with optional start and end dates, a category and a colour. Use **New phase**, a phase's **Add task to this phase**, or **Add task without a phase**; move a task later with its **Phase** field, which can also create a phase on the spot. Give a task steps in its editor, or with **Add step** under the task's arrow. Each step can have a time and reminder, and on a one-time task its own date; reorder steps by dragging them or with the arrow keys. Ticking the last step completes the task, and each occurrence of a repeating task starts with fresh steps. Deleting a phase keeps its tasks. Phases and steps stay on this device and are not sent to Google Calendar.
+On Tasks, switch between **Phases** and **List**. Phases groups the tasks of a bigger plan into numbered stages, each with optional start and end dates, a category and a colour. Use **New phase**, a phase's **Add task to this phase**, or **Add task without a phase**; move a task later with its **Phase** field, which can also create a phase on the spot. Give a task steps in its editor, or with **Add step** under the task's arrow. Each step can have a time and reminder, and on a one-time task its own date; reorder steps by dragging them or with the arrow keys. Ticking the last step completes the task, and each occurrence of a repeating task starts with fresh steps. Deleting a phase keeps its tasks. Phases and steps stay on this device.
 
 Priority is Low, Medium or High (under More task options, or `!high`, `!medium`, `!low` in Quick Add). High tasks are highlighted in red with a flag, Medium tasks get a yellow label, and Low tasks stay plain. On the Tasks and Events pages, High items are listed first in each group and phase. Home shows how many High tasks are still open; click it to see them on Tasks.
 
-Calendar defaults to Week and also offers Day and Month. Click a time slot to create an event. Drag events to move them while preserving duration. Drag their lower edge to resize, or focus the resize handle and use arrow keys; times snap to 15 minutes. Day includes anytime tasks. Recurring items support independent task completion, local occurrence exceptions and series editing. Read the Google limitations below before syncing advanced exceptions.
+Calendar defaults to Week and also offers Day and Month. Click a time slot to create an event. Drag events to move them while preserving duration. Drag their lower edge to resize, or focus the resize handle and use arrow keys; times snap to 15 minutes. Day includes anytime tasks. Recurring items support independent task completion, local occurrence exceptions and series editing.
 
 Focus uses persisted deadlines rather than counting renderer ticks. Pause, resume, restart and sleep recovery use real elapsed time. Completed sessions, focused minutes and streaks derive from session history.
 
@@ -50,21 +50,19 @@ Reminders run in the main process while the app is open, minimized or in the tra
 
 Settings persist start page, time format, week start, timezone, Windows startup, start minimized, close to tray, text scale, reduced motion, notification options and Google preferences. Use Quit application or tray → Quit to fully exit.
 
-## Google Calendar
+## Local-only release
 
-Follow [Google setup](docs/GOOGLE-CALENDAR.md). Create a Google Cloud **Desktop app** OAuth client and enable Calendar API. In Settings click **Sign in with Google** and choose the downloaded client JSON once; Google login opens automatically. Later clicks go directly to login. Tokens and imported client secrets stay in the main process and are encrypted with Windows secure storage; connection fails explicitly if secure storage is unavailable.
-
-For guided help, use **Settings → Google Calendar → Setup guide**. Six short steps provide buttons to Google's project, API, Branding, Audience and Clients pages, explain which JSON file to download, and finish with import/sign-in. Troubleshooting is included.
-
-Two-way synchronization is the default after connecting. Existing unrelated calendar events are imported only when opted in. Offline edits remain in a durable queue; conflicts show local and Google versions for review. Scheduled tasks map to Calendar events, not Google Tasks. Date-only tasks map to all-day events. Phone alerts depend on Google's Calendar application and your phone's notification permissions.
-
-Live Google sign-in has **not** been tested here. OAuth and synchronization request/response behavior passed automated HTTP mocks. Google-linked occurrence field editing, remote recurring instance exceptions, advanced RRULE imports and multi-day remote events are deliberately limited; the app reports these instead of silently flattening them. Supported recurring series and exclusion dates synchronize. Individual task occurrence completion is local state because Calendar has no task-completion field.
+Google Calendar integration has been removed. Existing local tasks, events, recurrence,
+steps, and reminders are retained on upgrade; remote links, sync queues, and stored
+Google credentials are removed. Events already in your Google account are not changed.
+You may remove the old app authorization in your Google account settings yourself.
+Legacy backup fields are accepted for compatibility but cannot reactivate synchronization.
 
 ## Storage and privacy
 
 Data lives in `%APPDATA%\My Tasks\my-tasks.sqlite`, separate from the executable. Settings shows the exact data location and can open it. SQLite migrations are versioned and mutations are transactional. The driver is Electron's bundled `node:sqlite`, avoiding a separate native module.
 
-Settings → Data exports/imports JSON backups including items, categories, recurrence exceptions, reminder configuration, focus history and nonsecret preferences. Imports validate before replacing data, preserve a safety snapshot and reset remote links to avoid accidental Google overwrites. Original prototype JSON exports are also accepted. OAuth tokens and client secrets are never exported. Only items you enable for Google synchronization are uploaded; optional calendar import retrieves the calendar you select.
+Settings → Data exports/imports JSON backups including items, categories, recurrence exceptions, reminder configuration, focus history and nonsecret preferences. Imports validate before replacing data, preserve a safety snapshot and reset remote links to avoid accidental Google overwrites. Original prototype JSON exports are also accepted. OAuth tokens and client secrets are never exported. No calendar synchronization or Google sign-in is included.
 
 ## Build and test
 
@@ -97,3 +95,12 @@ The [Windows release workflow](.github/workflows/windows-release.yml) runs a cle
 `release\win-unpacked`, if present, is an incomplete earlier packaging attempt; use the named portable folder or ZIP. Cleanup of that incomplete folder was blocked by the managed environment's approval policy.
 
 See [verification report](docs/VERIFICATION.md) for checks actually performed, environment restrictions and remaining limitations.
+
+## Feedback
+
+The Feedback button accepts suggestions and an optional reply email without displaying
+the recipient or subject. Delivery stays disabled until the hosted service is configured.
+See [feedback deployment](services/feedback/README.md). No planner data is attached.
+
+Release preparation status is tracked in [project control](docs/my-tasks-project-control.md).
+This branch is not yet a Microsoft Store submission package.
