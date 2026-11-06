@@ -12,7 +12,7 @@ files:
   - package.json
 asar: true
 npmRebuild: false
-electronVersion: 40.10.2
+electronVersion: 43.8.7
 win:
   icon: build/icon.ico
   target:

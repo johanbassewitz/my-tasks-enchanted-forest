@@ -42,11 +42,12 @@ describe('verified Store licenses',()=>{
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 const realRequire=createRequire(import.meta.url);
 describe('Store artifact labeling',()=>{
  const build=(enabled:boolean,products:Record<string,string>)=>{
   const result={exports:{} as any};
-  runInNewContext(readFileSync(new URL('../electron-builder.store.cjs',import.meta.url),'utf8'),{module:result,__dirname:new URL('..',import.meta.url).pathname,require:(name:string)=>name==='./config/store.json'?{enabled,identityName:'Real.Identity',publisher:'CN=RealPublisher',publisherDisplayName:'Real Publisher',products}:realRequire(name)});
+  runInNewContext(readFileSync(new URL('../electron-builder.store.cjs',import.meta.url),'utf8'),{module:result,__dirname:fileURLToPath(new URL('..',import.meta.url)),require:(name:string)=>name==='./config/store.json'?{enabled,identityName:'Real.Identity',publisher:'CN=RealPublisher',publisherDisplayName:'Real Publisher',products}:realRequire(name)});
   return result.exports.appx.artifactName as string;
  };
  it('labels identity-configured builds as preview while commerce is disabled or products missing',()=>{
