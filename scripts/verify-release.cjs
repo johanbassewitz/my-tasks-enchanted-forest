@@ -15,8 +15,8 @@ for(const [name,entry]of Object.entries(lock.packages)){
 }
 for(const file of ['build/icon.ico','build/icon.png','.github/workflows/windows-release.yml','docs/GITHUB-RELEASE.md'])assert.ok(fs.existsSync(path.join(root,file)),file+' is missing');
 // Exercise old minimatch consumers against the modern brace expansion export.
-const legacy=require('@electron/asar/node_modules/minimatch');
+const legacy=require('node:module').createRequire(require.resolve('@electron/asar'))('minimatch');
 assert.equal(legacy('file1','file{1,2}'),true);assert.equal(legacy('file3','file{1,2}'),false);
 assert.equal(require('minimatch').minimatch('file1','file{1,2}'),true);
-assert.equal(require('@electron/universal/node_modules/minimatch').minimatch('file1','file{1,2}'),true);
+assert.equal(require('node:module').createRequire(require.resolve('@electron/universal'))('minimatch').minimatch('file1','file{1,2}'),true);
 console.log('Installer schema, shortcuts, icon, package lock and build compatibility verified.');
