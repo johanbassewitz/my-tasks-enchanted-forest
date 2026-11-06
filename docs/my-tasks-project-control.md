@@ -26,3 +26,6 @@ Review fixes cover Store license/catalog independence, startup policy truthfulne
 Daywhisper reservation and exact Partner Center identity; product IDs/prices; private feedback service deployment and inbox verification; public finalized privacy URL; advertiser agreement if used; rights to bundled original art/icon/fonts; Windows installation/notification/sleep/scaling checks; Store flight purchase/restore/offline tests; WACK; final submission approval.
 
 See docs/store/PUBLISHING-CHECKLIST.md. Preview packages are not submission packages. Source audit/COMMERCIAL-AUDIT.md was unavailable; findings used the supplied audit and code review.
+
+## Verification outcome — 2026-11-06
+The full Windows pipeline passed on production-preparation commit 817eeb9: 123 unit tests, two native UI tests, .NET helper, NSIS and APPX builds. Both release-preparation branches are saved. See docs/store/VERIFICATION.md for evidence and remaining account/device gates. The owner reiterated preparation only: do not publish, merge main, tag or submit. No live commercial service was activated.
