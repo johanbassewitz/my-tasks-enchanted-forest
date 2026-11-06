@@ -6,7 +6,7 @@ const {applyCommand}=require('../dist-electron/electron/commands');
 const {ReminderScheduler}=require('../dist-electron/electron/scheduler');
 const root=path.resolve(__dirname,'..');const dir=path.join(root,'.browser-test-data');fs.mkdirSync(dir,{recursive:true});
 const repo=new Repository(path.join(dir,'tests.sqlite'));const scheduler=new ReminderScheduler(repo,()=>{});
-const bridge=`window.desktop={getData:()=>fetch('/api/data').then(r=>r.json()),command:async c=>{const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});const data=await r.json();if(!r.ok)throw Error(data.error);return data},window:async()=>{},onData:()=>()=>{},onAlert:()=>()=>{}};`;
+const bridge=`window.desktop={commerceStatus:async()=>({mode:'preview',owned:[],prices:{}}),feedbackAvailable:async()=>false,getData:()=>fetch('/api/data').then(r=>r.json()),command:async c=>{const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});const data=await r.json();if(!r.ok)throw Error(data.error);return data},window:async()=>{},onData:()=>()=>{},onAlert:()=>()=>{}};`;
 http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://127.0.0.1:5175');
  if(req.headers.host!=='127.0.0.1:5175')throw Error('Invalid host');

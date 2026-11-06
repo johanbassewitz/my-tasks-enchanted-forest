@@ -30,9 +30,10 @@ export class ReminderScheduler {
     if(due<=now&&(r.deliveredAt===null||r.snoozedUntil!==null)){r.deliveredAt=now;r.snoozedUntil=null;pending.push({title:r.title,body:'Your scheduled reminder is due.',itemId:r.itemId,reminderId:r.id});}
    }
    data.reminders=[...existing.values()].filter(r=>r.due>now-30*86400000||r.snoozedUntil!==null);
-   const result=advanceFocus(data.focus,now);data.focus=result.focus;if(result.completed)pending.push({title:'Focus session complete',body:'Time to pause and take a breath.'});
+   // The persisted deadline is authoritative while running; remaining is a UI projection.
+   const result=advanceFocus(data.focus,now);if(result.completed)data.focus=result.focus;if(result.completed)pending.push({title:'Focus session complete',body:'Time to pause and take a breath.'});
   });
-  if(pending.length>1)this.deliver({title:'While you were away',body:`${pending.length} reminders or focus sessions are ready. Open My Tasks to review them.`});else if(pending[0])this.deliver(pending[0]);
+  if(pending.length>1)this.deliver({title:'While you were away',body:`${pending.length} reminders or focus sessions are ready. Open Daywhisper to review them.`});else if(pending[0])this.deliver(pending[0]);
  }
  snooze(id:string,now=Date.now()):void{this.repository.update(d=>{const r=d.reminders.find(r=>r.id===id);if(r){r.snoozedUntil=now+10*60000;r.enabled=true;}});}
  dismiss(id:string):void{this.repository.update(d=>{const r=d.reminders.find(r=>r.id===id);if(r){r.deliveredAt=Date.now();r.snoozedUntil=null;}});}

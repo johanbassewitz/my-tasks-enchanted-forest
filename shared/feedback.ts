@@ -4,4 +4,4 @@ export const feedbackSchema=z.object({
  replyTo:z.union([z.literal(''),z.email().max(254)]).default('')
 }).strict();
 export type FeedbackInput=z.infer<typeof feedbackSchema>;
-export const appDisplayName='My Tasks — Enchanted Forest';
+export const appDisplayName='Daywhisper';

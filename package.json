@@ -1,9 +1,9 @@
 {
-  "name": "my-tasks-enchanted-forest",
-  "version": "1.1.0",
+  "name": "daywhisper",
+  "version": "1.2.0",
   "private": true,
-  "description": "A local enchanted forest task and calendar sanctuary",
-  "author": "My Tasks",
+  "description": "A calm local-first planner for tasks, study and focused days",
+  "author": "Daywhisper",
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -18,7 +18,10 @@
     "dist:installer": "npm run build && electron-builder --win nsis --x64 --publish never",
     "check:release": "node scripts/verify-release.cjs",
     "source:zip": "python scripts/create-source-bundle.py",
-    "prebuild": "node scripts/clean-build.cjs"
+    "prebuild": "node scripts/clean-build.cjs",
+    "dist:store": "npm run build && electron-builder --config electron-builder.store.cjs --win appx --x64 --publish never",
+    "check:store": "node scripts/verify-store.cjs",
+    "build:store-helper": "dotnet publish native/Daywhisper.Store/Daywhisper.Store.csproj -c Release -r win-x64 --self-contained true -o native/Daywhisper.Store/publish"
   },
   "dependencies": {
     "react": "19.2.8",
@@ -43,7 +46,7 @@
     "yauzl": "3.4.0",
     "brace-expansion@<5": "5.0.9"
   },
-  "productName": "My Tasks",
+  "productName": "Daywhisper",
   "engines": {
     "node": ">=24.0.0"
   },

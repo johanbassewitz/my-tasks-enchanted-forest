@@ -1,6 +1,6 @@
 appId: com.mytasks.forest
-productName: My Tasks
-copyright: Copyright © 2026 My Tasks
+productName: Daywhisper
+copyright: Copyright © 2026 Daywhisper
 directories:
   output: release
   buildResources: build
@@ -26,8 +26,8 @@ nsis:
   runAfterFinish: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  shortcutName: My Tasks
+  shortcutName: Daywhisper
   deleteAppDataOnUninstall: false
-  artifactName: My-Tasks-Setup-${version}-x64.${ext}
+  artifactName: Daywhisper-Setup-${version}-x64.${ext}
 portable:
-  artifactName: My-Tasks-Portable-${version}.${ext}
+  artifactName: Daywhisper-Portable-${version}.${ext}

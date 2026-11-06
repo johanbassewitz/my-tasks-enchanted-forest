@@ -31,3 +31,9 @@ scripts/cache-registry.cjs
 vendor/brace-expansion-compat/
 Thumbs.db
 .DS_Store
+
+release-store/
+native/**/bin/
+native/**/obj/
+native/**/publish/
+artifacts/

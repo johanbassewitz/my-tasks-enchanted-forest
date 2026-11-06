@@ -1,4 +1,4 @@
-export type Page = 'Home'|'Calendar'|'Focus'|'Categories'|'Tasks'|'Events'|'Reminders'|'Settings';
+export type Page = 'Home'|'Calendar'|'Focus'|'Categories'|'Tasks'|'Events'|'Reminders'|'Settings'|'Study'|'Packs'|'Shop';
 export type SyncState = 'Local only'|'Pending sync'|'Synced'|'Sync error'|'Conflict'|'Disconnected';
 export interface Item {
  id:string; kind:'task'|'event'; title:string; date:string; time:string; end:string; timezone:string;
@@ -21,6 +21,7 @@ export interface Category {id:string; name:string; icon:string; accent:string}
 export interface FocusSession {id:string; date:string; minutes:number; task:string; goal:string; completedAt:number}
 export interface FocusState {duration:number; remaining:number; deadline:number|null; running:boolean; task:string; goal:string; sessionId:string; history:FocusSession[]}
 export interface Settings {
+ theme:import('./themes').ThemeId;
  start:Page; time:'12'|'24'; week:'Monday'|'Sunday'; timezone:string; startWithWindows:boolean;
  startMinimized:boolean; closeToTray:boolean; reducedMotion:boolean; textScale:number;
  desktop:boolean; inApp:boolean; sound:boolean; defaultReminders:number[];
@@ -30,8 +31,11 @@ export interface Settings {
 export interface GoogleStatus {configured:boolean; connected:boolean; account:string; calendars:{id:string;summary:string}[]; lastSync:string; error:string; secureStorage:boolean; syncing:boolean}
 export interface ReminderRecord {id:string; itemId:string; occurrenceDate:string; offset:number; due:number; deliveredAt:number|null; snoozedUntil:number|null; title:string; enabled:boolean; stepId?:string}
 export interface Conflict {id:string; itemId:string; local:Item; remote:Item; reason:string}
-export interface AppData {version:number; items:Item[]; phases:Phase[]; categories:Category[]; settings:Settings; focus:FocusState; reminders:ReminderRecord[]; google:GoogleStatus; conflicts:Conflict[]; dataPath:string}
+export interface AppData {study:import('./study').StudyState; addons:import('./addons').AddonsState;version:number; items:Item[]; phases:Phase[]; categories:Category[]; settings:Settings; focus:FocusState; reminders:ReminderRecord[]; google:GoogleStatus; conflicts:Conflict[]; dataPath:string}
 export type Command =
+ | {type:'study.save';study:import('./study').StudyState}
+ | {type:'study.generate'}
+ | {type:'addons.save';addons:import('./addons').AddonsState}
  | {type:'item.save'; item:Item; scope?:'series'|'occurrence'; occurrenceDate?:string}
  | {type:'item.delete'; id:string; scope?:'series'|'occurrence'; occurrenceDate?:string}
  | {type:'item.restore';id:string}
@@ -48,6 +52,12 @@ export type Command =
  | {type:'notification.test'}
  | {type:'data.export'}|{type:'data.import'}|{type:'data.openFolder'};
 export interface DesktopAPI {
+ sponsor():Promise<{name:string;message:string}|null>;
+ openSponsor():Promise<void>;
+
+ commerceStatus():Promise<import('./commerce').CommerceStatus>;
+ purchase(key:import('./commerce').ProductKey):Promise<import('./commerce').CommerceStatus>;
+
  feedbackAvailable():Promise<boolean>;
  sendFeedback(input:import('./feedback').FeedbackInput):Promise<void>;
  getData():Promise<AppData>; command(command:Command):Promise<AppData>;

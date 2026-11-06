@@ -101,6 +101,6 @@ describe('phases',()=>{
   delete old.phases;for(const i of old.items){delete i.phaseId;delete i.steps;}
   db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(old));db.exec('UPDATE schema_version SET version=2');db.close();
   const r=new Repository(file);expect(r.getData().phases).toEqual([]);expect(r.getData().items.every(i=>i.phaseId===''&&i.steps.length===0)).toBe(true);r.close();
-  db=new DatabaseSync(file);expect(db.prepare('SELECT version FROM schema_version').get()?.version).toBe(4);db.close();rmSync(dir,{recursive:true,force:true});
+  db=new DatabaseSync(file);expect(db.prepare('SELECT version FROM schema_version').get()?.version).toBe(5);db.close();rmSync(dir,{recursive:true,force:true});
  });
 });

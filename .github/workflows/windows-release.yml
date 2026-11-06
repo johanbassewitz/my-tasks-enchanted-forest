@@ -55,7 +55,7 @@ jobs:
         with:
           name: my-tasks-windows-installer
           path: |
-            release/My-Tasks-Setup-*-x64.exe
+            release/Daywhisper-Setup-*-x64.exe
             release/SHA256SUMS-installer.txt
           if-no-files-found: error
           compression-level: 0
@@ -91,7 +91,7 @@ jobs:
             gh release upload $tag @files --clobber --repo $env:GITHUB_REPOSITORY
             if ($LASTEXITCODE -eq 0) { gh release edit $tag --notes-file release-notes.md --repo $env:GITHUB_REPOSITORY }
           } else {
-            $options = @('--title', "My Tasks $tag", '--notes-file', 'release-notes.md', '--repo', $env:GITHUB_REPOSITORY)
+            $options = @('--title', "Daywhisper $tag", '--notes-file', 'release-notes.md', '--repo', $env:GITHUB_REPOSITORY)
             if ($env:DRAFT -eq 'true') { $options += '--draft' }
             if ($env:MANUAL -eq 'true') { $options += @('--target', $env:GITHUB_SHA) } else { $options += '--verify-tag' }
             gh release create $tag @files @options

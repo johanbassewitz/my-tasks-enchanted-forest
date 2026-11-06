@@ -1,0 +1,76 @@
+name: Daywhisper release candidate
+on:
+  push:
+    branches: ['release/daywhisper-production', 'release/daywhisper-microsoft-store']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: daywhisper-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Native Electron tests and screenshots
+        run: npm run test:ui
+      - name: Validate packaging
+        run: |
+          npm run check:release
+          npm run check:store
+      - name: Gate production Store candidates
+        shell: pwsh
+        run: |
+          $preview = node -e "console.log(require('./electron-builder.store.cjs').appx.artifactName.includes('PREVIEW-'))"
+          if ($preview.Trim() -eq 'false') {
+            npm run check:store -- --submission
+            if ($LASTEXITCODE -ne 0) { throw 'Store submission configuration is incomplete' }
+          }
+      - name: Build native Store bridge
+        run: npm run build:store-helper
+      - name: Verify helper fails safely without package identity
+        shell: pwsh
+        run: |
+          $output = & ./native/Daywhisper.Store/publish/Daywhisper.Store.exe status --hwnd 1
+          $response = $output | ConvertFrom-Json
+          if ($response.ok -ne $false) { throw 'Unpackaged Store helper must not grant access' }
+          $global:LASTEXITCODE = 0
+      - name: Build desktop installer
+        run: npm run dist:installer
+      - run: node scripts/checksums.cjs
+      - name: Build Store package
+        run: npm run dist:store
+      - name: Record Store checksum
+        shell: pwsh
+        run: |
+          Get-ChildItem release-store/*.appx | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content release-store/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: daywhisper-windows-candidate
+          path: |
+            release/Daywhisper-Setup-*-x64.exe
+            release/SHA256SUMS-installer.txt
+            release-store/*.appx
+            release-store/SHA256SUMS.txt
+            artifacts/screenshots/*.png
+            test-results/**
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0

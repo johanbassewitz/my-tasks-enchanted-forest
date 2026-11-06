@@ -1,3 +1,6 @@
+import {themeIds} from '../shared/themes';
+import {studySchema,defaultStudy} from '../shared/study';
+import {addonsSchema,defaultAddons} from '../shared/addons';
 import { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { IANAZone } from 'luxon';
@@ -9,7 +12,10 @@ import { makeLocalOnly } from '../shared/local-only';
 import { migrate } from './migrations';
 
 const date=z.string().regex(/^(|\d{4}-\d{2}-\d{2})$/);const short=z.string().max(1000);const strings=z.array(short).max(10000);
-export const settingsSchema=z.object({start:z.enum(['Home','Calendar','Focus','Categories','Tasks','Events','Reminders','Settings']),time:z.enum(['12','24']),week:z.enum(['Monday','Sunday']),timezone:short.refine(zone=>IANAZone.isValidZone(zone)),startWithWindows:z.boolean(),startMinimized:z.boolean(),closeToTray:z.boolean(),reducedMotion:z.boolean(),textScale:z.number().min(75).max(200),desktop:z.boolean(),inApp:z.boolean(),sound:z.boolean(),defaultReminders:z.array(z.number().int().min(0).max(40320)).max(5),googleClientId:short,googleClientSecret:short,calendarId:short,syncMode:z.enum(['two-way','push']),syncCompleted:z.boolean(),deleteGoogle:z.boolean(),importExisting:z.boolean()}).strict();
+const historyDate=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const parsed=new Date(`${value}T00:00:00Z`);return !Number.isNaN(parsed.valueOf())&&parsed.toISOString().slice(0,10)===value},'Choose a valid focus history date');
+const focusHistorySchema=z.array(z.object({id:short.min(1),date:historyDate,minutes:z.number().positive().max(1440),task:short,goal:short,completedAt:z.number().int().min(0).max(8640000000000000)})).max(100000).refine(history=>new Set(history.map(session=>session.id)).size===history.length,'Duplicate focus session identifiers');
+
+export const settingsSchema=z.object({theme:z.enum(themeIds).default('enchanted-forest'),start:z.enum(['Home','Calendar','Focus','Categories','Tasks','Events','Reminders','Settings','Study','Packs','Shop']),time:z.enum(['12','24']),week:z.enum(['Monday','Sunday']),timezone:short.refine(zone=>IANAZone.isValidZone(zone)),startWithWindows:z.boolean(),startMinimized:z.boolean(),closeToTray:z.boolean(),reducedMotion:z.boolean(),textScale:z.number().min(75).max(200),desktop:z.boolean(),inApp:z.boolean(),sound:z.boolean(),defaultReminders:z.array(z.number().int().min(0).max(40320)).max(5),googleClientId:short,googleClientSecret:short,calendarId:short,syncMode:z.enum(['two-way','push']),syncCompleted:z.boolean(),deleteGoogle:z.boolean(),importExisting:z.boolean()}).strict();
 const itemShape={occurrenceDate:date.optional(),id:short.min(1),kind:z.enum(['task','event']),title:short.min(1),date,time:z.string().regex(/^(|\d{2}:\d{2})$/),end:z.string().max(40),timezone:short,category:short,priority:z.enum(['Low','Normal','High']),notes:z.string().max(100000),location:short,done:z.boolean(),repeat:z.enum(['Never','Daily','Weekdays','Weekly','Monthly','Yearly','Custom']),interval:z.number().int().min(1).max(1000),recurrenceEnd:z.string().max(10),recurrenceCount:z.number().int().min(1).max(100000).nullable(),completedDates:strings,excludedDates:strings,exceptions:z.record(z.string(),z.record(z.string(),z.unknown())),reminders:z.array(z.number().int().min(0).max(40320)).max(5),reminderEnabled:z.boolean(),synced:z.boolean(),calendarId:short,syncState:z.enum(['Local only','Pending sync','Synced','Sync error','Conflict','Disconnected']),remoteId:short,remoteEtag:short,remoteUpdated:short,createdAt:short,updatedAt:short,order:z.number().finite(),deletedAt:short.nullable(),phaseId:z.string().max(200).default(''),steps:z.array(z.object({id:short.min(1),title:short.min(1),date,time:z.string().regex(/^(|\d{2}:\d{2})$/),reminders:z.array(z.number().int().min(0).max(40320)).max(5),reminderEnabled:z.boolean(),done:z.boolean(),completedDates:strings}).strict()).max(100).default([])};
 export const itemSchema=z.object(itemShape).strict().superRefine((item,ctx)=>{try{validateItem(item as Item);}catch(error){ctx.addIssue({code:'custom',message:String(error)});}});
 export const phaseSchema=z.object({id:short.min(1),title:short.min(1),order:z.number().finite(),start:date,end:date,category:short,color:short,createdAt:short,updatedAt:short}).strict().superRefine((phase,ctx)=>{try{validatePhase(phase as Phase);}catch(error){ctx.addIssue({code:'custom',message:String(error)});}});
@@ -23,7 +29,7 @@ export class Repository {
  }
  private transaction<T>(fn:()=>T):()=>T{return()=>{this.db.exec('BEGIN IMMEDIATE');try{const result=fn();this.db.exec('COMMIT');return result;}catch(error){this.db.exec('ROLLBACK');throw error;}};}
  getData():AppData{return JSON.parse((this.db.prepare('SELECT json FROM state WHERE id=1').get() as {json:string}).json);}
- update(mutator:(data:AppData)=>void):AppData{return this.transaction(()=>{const data=this.getData();mutator(data);makeLocalOnly(data);this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(data));return data;})();}
+ update(mutator:(data:AppData)=>void):AppData{return this.transaction(()=>{const data=this.getData();const before=JSON.stringify(data);mutator(data);makeLocalOnly(data);const after=JSON.stringify(data);if(after!==before)this.db.prepare('UPDATE state SET json=? WHERE id=1').run(after);return data;})();}
  getMeta<T=unknown>(key:string):T|undefined{const row=this.db.prepare('SELECT value FROM metadata WHERE key=?').get(key) as {value:string}|undefined;return row?JSON.parse(row.value):undefined;}
  setMeta(key:string,value:unknown):void{if(value===undefined)this.db.prepare('DELETE FROM metadata WHERE key=?').run(key);else this.db.prepare('INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(key,JSON.stringify(value));}
  enqueue(itemId:string,action:'upsert'|'delete'='upsert'):void{this.db.prepare('INSERT INTO outbox(itemId,action) VALUES(?,?) ON CONFLICT(itemId) DO UPDATE SET action=excluded.action').run(itemId,action);}
@@ -33,8 +39,20 @@ export class Repository {
  exportBackup():string{const data=this.getData();data.settings.googleClientSecret='';data.google={...data.google,connected:false,account:'',calendars:[],syncing:false};data.dataPath='';return JSON.stringify(data,null,2);}
  importBackup(raw:string):void{
   if(raw.length>50_000_000)throw new Error('Backup is too large');const input=normalizeBackup(JSON.parse(raw));
-  const schema=z.object({version:z.literal(1),items:z.array(itemSchema).max(100000),phases:z.array(phaseSchema).max(10000).default([]),categories:categoriesSchema,settings:settingsSchema,focus:z.object({duration:z.number().min(1).max(1440),remaining:z.number().min(0),deadline:z.number().nullable(),running:z.boolean(),task:short,goal:short,sessionId:short,history:z.array(z.object({id:short,date:short,minutes:z.number(),task:short,goal:short,completedAt:z.number()})).max(100000)}),reminders:z.array(z.unknown()),google:z.unknown(),conflicts:z.array(z.unknown()),dataPath:z.string()});
+  const schema=z.object({study:studySchema.default(defaultStudy),addons:addonsSchema.default(defaultAddons),version:z.literal(1),items:z.array(itemSchema).max(100000),phases:z.array(phaseSchema).max(10000).default([]),categories:categoriesSchema,settings:settingsSchema,focus:z.object({duration:z.number().min(1).max(1440),remaining:z.number().min(0),deadline:z.number().nullable(),running:z.boolean(),task:short,goal:short,sessionId:short,history:focusHistorySchema}),reminders:z.array(z.unknown()),google:z.unknown(),conflicts:z.array(z.unknown()),dataPath:z.string()});
   const parsed=schema.parse(input);if(new Set(parsed.items.map(i=>i.id)).size!==parsed.items.length)throw new Error('Duplicate item identifiers');if(new Set(parsed.phases.map(p=>p.id)).size!==parsed.phases.length)throw new Error('Duplicate phase identifiers');const phaseIds=new Set(parsed.phases.map(p=>p.id));for(const item of parsed.items)if(!phaseIds.has(item.phaseId))item.phaseId='';
+  const studyItems=new Map(parsed.items.map(item=>[item.id,item]));
+  const chapterOwners=new Map(parsed.study.subjects.flatMap(subject=>subject.chapters.map(chapter=>[chapter.id,subject.id] as const)));
+  for(const session of parsed.study.sessions){
+   const task=studyItems.get(session.taskId);
+   if(!task)throw new Error('A study allocation refers to a missing task. Restore a complete backup.');
+   if(task.kind!=='task'||task.repeat!=='Never'||!task.date)throw new Error('A study allocation must refer to a dated, one-time task.');
+   const owner=chapterOwners.get(session.chapterId);
+   if(owner&&owner!==session.subjectId)throw new Error('A study allocation refers to a chapter in a different subject.');
+   // Deleted tasks and removed chapter/subject history remain valid allocations.
+   // Repair backups made before calendar moves updated their allocation dates.
+   session.date=task.date;
+  }
   this.transaction(()=>{this.setMeta('backup.beforeImport',this.exportBackup());const old=this.getData();const next={...old,...parsed,reminders:[],conflicts:[],google:old.google,dataPath:old.dataPath} as AppData;makeLocalOnly(next);next.focus.running=false;next.focus.deadline=null;for(const item of next.items){item.remoteId='';item.remoteEtag='';item.remoteUpdated='';item.synced=false;item.syncState='Local only';}this.db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(next));this.db.exec('DELETE FROM outbox');})();
  }
  close():void{this.db.close();}

@@ -45,3 +45,6 @@
 .stats-strip .next-item{max-width:45%}.high-stat{background:none;border:0;border-radius:8px;padding:2px 10px;cursor:pointer;text-align:center}.high-stat:hover{background:#ffffff0d}.high-stat strong{display:flex!important;align-items:center;justify-content:center;gap:6px}.high-stat strong svg{width:16px;height:16px;color:#8f9e7c}.high-stat.has-high strong{color:#ff9d8f}.high-stat.has-high strong svg{color:#e65a4b}
 
 .feedback-form{display:grid;gap:12px}.feedback-form textarea{width:100%;resize:vertical;min-height:120px}.feedback-form small{line-height:1.5;color:#bbcaa7}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}.shop-product{padding:20px}.shop-product p{line-height:1.6;min-height:80px}.shop-product h3{margin:10px 0}.sidebar nav{overflow-y:auto;min-height:0}.sidebar .sidebar-scenic{min-height:100px}
+
+.sponsor-slot{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;margin-bottom:16px;border:1px solid var(--line);border-radius:8px;font-size:12px}.sponsor-slot small{opacity:.8}.sponsor-slot button{text-decoration:underline}

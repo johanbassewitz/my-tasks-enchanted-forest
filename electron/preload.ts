@@ -1,6 +1,10 @@
 import { contextBridge,ipcRenderer } from 'electron';
 import type { AppData, DesktopAPI, Command } from '../shared/types';
 const api:DesktopAPI={
+ sponsor:()=>ipcRenderer.invoke('desktop:sponsor'),
+ openSponsor:()=>ipcRenderer.invoke('desktop:openSponsor'),
+ commerceStatus:()=>ipcRenderer.invoke('desktop:commerce'),
+ purchase:key=>ipcRenderer.invoke('desktop:purchase',key),
  feedbackAvailable:()=>ipcRenderer.invoke('desktop:feedbackAvailable'),
  sendFeedback:input=>ipcRenderer.invoke('desktop:feedback',input),
  getData:()=>ipcRenderer.invoke('desktop:getData'),

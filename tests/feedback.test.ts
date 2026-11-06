@@ -21,7 +21,7 @@ describe('feedback delivery',()=>{
    const request=(data:unknown)=>new Request('https://feedback.example.com',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify(data)});
    expect((await worker.fetch(request({...payload,to:'other@example.com'}),env)).status).toBe(400);expect(send).not.toHaveBeenCalled();
    expect((await worker.fetch(request(payload),env)).status).toBe(202);
-   expect(JSON.parse(String(send.mock.calls[0][1]?.body))).toMatchObject({to:['owner@example.com'],subject:'My Tasks — Enchanted Forest',text:payload.message});
+   expect(JSON.parse(String(send.mock.calls[0][1]?.body))).toMatchObject({to:['owner@example.com'],subject:'Daywhisper',text:payload.message});
    const denied={...env,RATE_LIMITER:{limit:async()=>({success:false})}};
    expect((await worker.fetch(request(payload),denied)).status).toBe(429);expect(send).toHaveBeenCalledTimes(1);
   }finally{send.mockRestore()}

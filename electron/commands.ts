@@ -1,3 +1,6 @@
+import {studySchema,buildStudySchedule} from '../shared/study';
+import {addonsSchema} from '../shared/addons';
+import {newItem} from '../shared/defaults';
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { randomUUID } from 'node:crypto';
@@ -7,6 +10,9 @@ import type {Command,Item} from '../shared/types';
 
 const id=z.string().min(1).max(1000),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>DateTime.fromISO(value).isValid),scope=z.enum(['series','occurrence']).optional();
 export const commandSchema=z.discriminatedUnion('type',[
+ z.object({type:z.literal('study.save'),study:studySchema}).strict(),
+ z.object({type:z.literal('study.generate')}).strict(),
+ z.object({type:z.literal('addons.save'),addons:addonsSchema}).strict(),
  z.object({type:z.literal('item.save'),item:itemSchema,scope,occurrenceDate:date.optional()}).strict(),
  z.object({type:z.literal('item.delete'),id,scope,occurrenceDate:date.optional()}).strict(),
  z.object({type:z.literal('item.restore'),id}).strict(),z.object({type:z.literal('item.complete'),id,date}).strict(),
@@ -22,11 +28,30 @@ export const commandSchema=z.discriminatedUnion('type',[
 export function applyCommand(repo:Repository,input:unknown):void {
  const c=commandSchema.parse(input) as Command;
   repo.update(d=>{
+   if(c.type==='addons.save')d.addons=c.addons;
+   if(c.type==='study.save')d.study={...c.study,sessions:d.study.sessions};
+   if(c.type==='study.generate'){
+    const today=DateTime.now().setZone(d.settings.timezone).toISODate()!;
+    const slots=buildStudySchedule(d.study,today);
+    if(d.items.length+slots.length>100000||d.study.sessions.length+slots.length>50000)throw new Error('This plan is too large. Schedule fewer chapters.');
+    for(const slot of slots){
+     const task={...newItem('task',slot.date),title:slot.title,category:'Study',timezone:d.settings.timezone,notes:`Study for ${slot.minutes} minutes. Start a Focus session and select this task to track time.`,order:d.items.length};
+     d.items.push(task);d.study.sessions.push({...slot,id:randomUUID(),taskId:task.id});
+    }
+   }
+
    const find=(itemId:string)=>{const item=d.items.find(i=>i.id===itemId);if(!item)throw new Error('Item no longer exists');return item;};
    const touch=(item:Item)=>{item.updatedAt=new Date().toISOString();};
    if(c.type==='item.save'){
     const old=d.items.find(i=>i.id===c.item.id);const saved=validateItem(c.item);
     if(saved.phaseId&&!d.phases.some(p=>p.id===saved.phaseId))throw new Error('That phase no longer exists. Choose another phase.');
+    const studySession=d.study.sessions.find(session=>session.taskId===saved.id);
+    if(studySession){
+     if(saved.kind!=='task'||saved.repeat!=='Never'||!saved.date)throw new Error('Keep this study session as a dated, one-time task. Choose a date to move it.');
+     if(c.scope==='occurrence')throw new Error('Edit the whole study task to move its study allocation.');
+     studySession.date=saved.date;
+    }
+
     // Ticking every step in the editor completes a one-time task, like ticking them in the list.
     const allSteps=(item:Item)=>item.steps.length>0&&item.steps.every(step=>isStepDone(item,step,item.date));
     if(saved.repeat==='Never'&&allSteps(saved)&&!(old&&old.repeat==='Never'&&allSteps(old)))saved.done=true;

@@ -1,106 +1,61 @@
-# My Tasks — Enchanted Forest
+# Daywhisper
 
-A personal Windows desktop task and calendar app, built with Electron, React, TypeScript and Vite. The supplied `My-Tasks.html` is preserved; its illustrated forest, transparent ivy and visual styling are reused. All eight sections have working local features. No app account or hosting is required.
+A calm Windows planner with local tasks, calendar events, recurring schedules, subtasks, project phases, reminders, focus sessions, search and recoverable trash. Formerly My Tasks — Enchanted Forest.
 
-## Install from GitHub
+This branch prepares version 1.2.0 for testing. It is not a published or certified Microsoft Store release. See [release gates](docs/store/PUBLISHING-CHECKLIST.md).
 
-[Download My Tasks for Windows](https://github.com/johanbassewitz/my-tasks-enchanted-forest/releases/latest) · [Source code](https://github.com/johanbassewitz/my-tasks-enchanted-forest)
+## What's included
 
-1. Open this repository's **Releases** page.
-2. Under **Assets**, download **My-Tasks-Setup-…-x64.exe**.
-3. Run the installer. It installs for your Windows user, creates the **My Tasks** desktop/Start menu icon, and opens the app.
+- Local planning with no Google account or calendar synchronization.
+- Enchanted Forest plus Midnight Observatory and Amber Hearth themes.
+- Study planning: subjects, chapters, exam dates, daily availability, revision tasks and recorded focus time.
+- Creator pipeline, freelancer project tracker, habit history and private journal packs.
+- Automatic rolling local backups, a safety snapshot before restore, and manual export/import.
+- In-app feedback form with optional reply email; no planner data attached.
+- Store purchase/restore integration and optional labeled sponsorship placement.
 
-Afterward, open **My Tasks** from its icon. No Node.js, source files or launch scripts are required. The app's supporting files live in the installation folder, and your tasks stay in your Windows application-data folder. Use Windows Settings → Apps to uninstall; your task data is retained.
+Commercial services are disabled until configured. Preview mode unlocks the themes and packs for testing; purchases are unavailable and nobody is charged. The feedback button cannot send until its HTTPS service is deployed. No advertiser or advertising network is connected. Supporter subscriptions are designed to remove sponsorship and unlock themes; packs are separate purchases. Prices remain unset.
 
-The Windows installer is built by GitHub Actions. Future version tags prepare a draft release for review. See [publishing instructions](docs/GITHUB-RELEASE.md).
+## Notifications and storage
 
-## Run the existing local portable build
+Reminders work independently of Google while Daywhisper is open or running in the tray. They cannot fire when the app is fully quit or the computer is off. Windows startup is optional and subject to Windows/user policy.
 
-Double-click **`release\My Tasks Portable\My Tasks.exe`**. Keep the entire portable folder together. Node.js is not required to run this build.
+Existing installations keep their data directory: `%APPDATA%\My Tasks\my-tasks.sqlite`. Settings shows the actual location. Store application-data virtualization can change that location; use export/import when moving between direct and Store installations. Data is not encrypted by the app. Backups on the same disk do not protect against disk loss; export a copy elsewhere.
 
-Alternatively, from this folder run:
+The scheduler checks deadlines without rewriting unchanged application state every second. Rolling backups run at startup and every six hours while open, retaining fourteen automatic snapshots. Restore first writes a safety copy and validates imported data transactionally.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Launch-My-Tasks.ps1
-```
+Google service code and sign-in were removed. Migration clears old remote links and credentials while preserving local tasks and events. Existing events in Google itself are untouched.
 
-To install this portable build for your Windows user and create desktop/Start menu shortcuts:
+## Build and verify
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Install-My-Tasks.ps1
-```
+Use Node 24 or newer. Windows Store packaging also requires .NET 8 SDK on Windows.
 
-This installation requires no administrator privileges. `Create-Desktop-Shortcut.ps1` also creates a shortcut without installing. These scripts have been supplied, but installation and shortcut creation were not executed in the restricted build environment.
-
-## Use
-
-Home shows real daily completion, the mini calendar, upcoming items and a focus shortcut. Use the contextual editor to create tasks or events. Expand More task options for priority, recurrence, timezone and event details. Tasks can be undated or date-only. Events require a date and valid start/end times; overnight events are prevented with a validation message.
-
-Use **Ctrl+N** for Quick Add and **Ctrl+K** to search titles, notes, categories and locations. Quick Add shows a review before saving. Right-click or use an item's three-dot menu for actions. Deleted items are recoverable in Tasks → Trash. Drag task rows or category cards to reorder; category cards also have keyboard-accessible arrow controls.
-
-On Tasks, switch between **Phases** and **List**. Phases groups the tasks of a bigger plan into numbered stages, each with optional start and end dates, a category and a colour. Use **New phase**, a phase's **Add task to this phase**, or **Add task without a phase**; move a task later with its **Phase** field, which can also create a phase on the spot. Give a task steps in its editor, or with **Add step** under the task's arrow. Each step can have a time and reminder, and on a one-time task its own date; reorder steps by dragging them or with the arrow keys. Ticking the last step completes the task, and each occurrence of a repeating task starts with fresh steps. Deleting a phase keeps its tasks. Phases and steps stay on this device.
-
-Priority is Low, Medium or High (under More task options, or `!high`, `!medium`, `!low` in Quick Add). High tasks are highlighted in red with a flag, Medium tasks get a yellow label, and Low tasks stay plain. On the Tasks and Events pages, High items are listed first in each group and phase. Home shows how many High tasks are still open; click it to see them on Tasks.
-
-Calendar defaults to Week and also offers Day and Month. Click a time slot to create an event. Drag events to move them while preserving duration. Drag their lower edge to resize, or focus the resize handle and use arrow keys; times snap to 15 minutes. Day includes anytime tasks. Recurring items support independent task completion, local occurrence exceptions and series editing.
-
-Focus uses persisted deadlines rather than counting renderer ticks. Pause, resume, restart and sleep recovery use real elapsed time. Completed sessions, focused minutes and streaks derive from session history.
-
-Reminders run in the main process while the app is open, minimized or in the tray. They **cannot run while fully quit or while the computer is off**. Recent missed reminders are summarized, rather than delivered as a flood. The Reminders page provides actual scheduled/snoozed times and working actions. Native Windows notifications open the app; snooze and task actions are available in the app, not native toast action buttons.
-
-Settings persist start page, time format, week start, timezone, Windows startup, start minimized, close to tray, text scale, reduced motion, notification options and Google preferences. Use Quit application or tray → Quit to fully exit.
-
-## Local-only release
-
-Google Calendar integration has been removed. Existing local tasks, events, recurrence,
-steps, and reminders are retained on upgrade; remote links, sync queues, and stored
-Google credentials are removed. Events already in your Google account are not changed.
-You may remove the old app authorization in your Google account settings yourself.
-Legacy backup fields are accepted for compatibility but cannot reactivate synchronization.
-
-## Storage and privacy
-
-Data lives in `%APPDATA%\My Tasks\my-tasks.sqlite`, separate from the executable. Settings shows the exact data location and can open it. SQLite migrations are versioned and mutations are transactional. The driver is Electron's bundled `node:sqlite`, avoiding a separate native module.
-
-Settings → Data exports/imports JSON backups including items, categories, recurrence exceptions, reminder configuration, focus history and nonsecret preferences. Imports validate before replacing data, preserve a safety snapshot and reset remote links to avoid accidental Google overwrites. Original prototype JSON exports are also accepted. OAuth tokens and client secrets are never exported. No calendar synchronization or Google sign-in is included.
-
-## Build and test
-
-Install **Node.js 24 or newer** and run:
-
-```powershell
+```sh
 npm ci
 npm test
 npm run build
+npm run test:ui
+npm run check:release
+npm run check:store
 npm run dev:desktop
 ```
 
-`npm run dev` opens a renderer-only visual preview; it explicitly cannot save without the desktop bridge. Real storage and notifications require Electron. For browser interaction testing against an isolated real SQLite database, run `npm run build`, then `node tests/browser-harness.cjs` and visit `http://127.0.0.1:5175`. This transport is test-only and is never packaged.
-
-```powershell
-# NSIS installer and single-file portable (network access for packaging tools)
-powershell -ExecutionPolicy Bypass -File .\Build-Windows.ps1
-
-# Folder portable using the installed Electron distribution
-powershell -ExecutionPolicy Bypass -File .\Build-Windows.ps1 -PortableFolderOnly
-
-# Native Electron smoke test after building, outside a restricted sandbox
-npm run test:ui
+```sh
+npm run build:store-helper
+npm run dist:installer
+npm run dist:store
 ```
 
-Electron-builder is configured for per-user installation and installer-created shortcuts. The folder portable is built in `release\My Tasks Portable`; ZIP distribution and checksums are alongside it. No NSIS installer or single-file portable was produced in this environment because packaging helper process creation was denied. The binaries are unsigned.
+The candidate workflow builds an unsigned NSIS desktop installer and a Store APPX preview, plus UI screenshots. A PREVIEW package uses test identity and is not for submission. Configure the reserved Store identity and products, then pass `npm run check:store -- --submission` before building a submission candidate. Store purchases, packaged startup and certification need testing with the real account.
 
-The [Windows release workflow](.github/workflows/windows-release.yml) runs a clean dependency install, tests, configuration checks and installer build on GitHub's Windows runner. Matching version tags create a draft containing one setup executable and its checksum. The maintainer publishes the draft after checking native installation; users download the installer rather than the source ZIP. See [GitHub release guide](docs/GITHUB-RELEASE.md).
+The renderer-only `npm run dev` preview cannot save. Native Electron tests use isolated data directories. Legacy PowerShell launch scripts remain for development compatibility; use the packaged installer for distribution.
 
-`release\win-unpacked`, if present, is an incomplete earlier packaging attempt; use the named portable folder or ZIP. Cleanup of that incomplete folder was blocked by the managed environment's approval policy.
+## Release documentation
 
-See [verification report](docs/VERIFICATION.md) for checks actually performed, environment restrictions and remaining limitations.
+- [Publishing checklist](docs/store/PUBLISHING-CHECKLIST.md)
+- [Store listing draft](docs/store/LISTING.md)
+- [Privacy draft](docs/store/PRIVACY.md)
+- [Feedback deployment](services/feedback/README.md)
+- [Project state](docs/my-tasks-project-control.md)
 
-## Feedback
-
-The Feedback button accepts suggestions and an optional reply email without displaying
-the recipient or subject. Delivery stays disabled until the hosted service is configured.
-See [feedback deployment](services/feedback/README.md). No planner data is attached.
-
-Release preparation status is tracked in [project control](docs/my-tasks-project-control.md).
-This branch is not yet a Microsoft Store submission package.
+Direct installers require certificate/service setup for signing and currently update by installing a new version. Store distribution provides Store-managed signing and updates after acceptance. Artwork rights, Windows device checks and owner approval remain release gates.

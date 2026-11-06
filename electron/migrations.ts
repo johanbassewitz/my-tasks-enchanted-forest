@@ -1,6 +1,8 @@
+import {defaultStudy} from '../shared/study';
+import {defaultAddons} from '../shared/addons';
 import {makeLocalOnly} from '../shared/local-only';
 import type {DatabaseSync} from 'node:sqlite';
-export const latestSchemaVersion=4;
+export const latestSchemaVersion=5;
 export function migrate(db:DatabaseSync):void {
  db.exec('CREATE TABLE IF NOT EXISTS schema_version(version INTEGER NOT NULL)');
  const row=db.prepare('SELECT version FROM schema_version LIMIT 1').get();let version=Number(row?.version||0);
@@ -18,6 +20,11 @@ export function migrate(db:DatabaseSync):void {
   if(row){const data=JSON.parse(row.json);makeLocalOnly(data);db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(data));}
   db.exec("DELETE FROM outbox; DELETE FROM metadata WHERE key LIKE 'google.%' OR key='googleClientSecret';");
   version=4;
+ }
+ if(version<5){
+  const row=db.prepare('SELECT json FROM state WHERE id=1').get() as {json:string}|undefined;
+  if(row){const data=JSON.parse(row.json);data.settings.theme??='enchanted-forest';data.study??=defaultStudy();data.addons??=defaultAddons();db.prepare('UPDATE state SET json=? WHERE id=1').run(JSON.stringify(data));}
+  version=5;
  }
  db.exec('DELETE FROM schema_version');db.prepare('INSERT INTO schema_version VALUES(?)').run(version);
 }

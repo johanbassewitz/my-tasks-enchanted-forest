@@ -1,8 +1,10 @@
+import {defaultStudy} from './study';
+import {defaultAddons} from './addons';
 import type {AppData,Item,Phase,Settings,Step} from './types';
 import {iso,shift} from './domain';
 const zone=()=>Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 export function defaultSettings():Settings {
- return {start:'Home',time:'12',week:'Monday',timezone:zone(),startWithWindows:false,startMinimized:false,closeToTray:true,reducedMotion:false,textScale:100,desktop:true,inApp:true,sound:false,defaultReminders:[10],googleClientId:'',googleClientSecret:'',calendarId:'',syncMode:'two-way',syncCompleted:false,deleteGoogle:true,importExisting:false};
+ return {theme:'enchanted-forest',start:'Home',time:'12',week:'Monday',timezone:zone(),startWithWindows:false,startMinimized:false,closeToTray:true,reducedMotion:false,textScale:100,desktop:true,inApp:true,sound:false,defaultReminders:[10],googleClientId:'',googleClientSecret:'',calendarId:'',syncMode:'two-way',syncCompleted:false,deleteGoogle:true,importExisting:false};
 }
 export function newItem(kind:'task'|'event'='task',date:string=iso()):Item {
  const now=new Date().toISOString();
@@ -23,5 +25,5 @@ export function createInitialData():AppData {
  const events=[{title:'Dentist Appointment',date:shift(today,1),time:'15:00',end:'16:00',category:'Health',location:'Dental clinic'},{title:'University Lecture',date:weekday(4),time:'10:00',end:'12:00',category:'Study',location:'University campus'},{title:'Dinner',date:weekday(5),time:'20:00',end:'21:00',category:'Personal',location:''}];
  events.forEach((event,i)=>items.push({...newItem('event',event.date),...event,order:6+i,reminders:[30],reminderEnabled:true}));
  const names=[['Personal','leaf'],['Study','book-open'],['Work','laptop'],['Gym','dumbbell'],['Health','heart-pulse'],['Routine','moon'],['Appointments','calendar-check'],['Social','users'],['Shopping','shopping-bag'],['Other','sparkles']];
- return {version:1,items,phases:[],categories:names.map(([name,icon],i)=>({id:'cat'+i,name,icon,accent:['#8bdd62','#d7bd78','#82b4cf','#d7a178','#db9eb0'][i%5]})),settings:defaultSettings(),focus:{duration:25,remaining:1500,deadline:null,running:false,task:'',goal:'One small step forward',sessionId:crypto.randomUUID(),history:[]},reminders:[],google:{configured:false,connected:false,account:'',calendars:[],lastSync:'',error:'',secureStorage:false,syncing:false},conflicts:[],dataPath:''};
+ return {study:defaultStudy(),addons:defaultAddons(),version:1,items,phases:[],categories:names.map(([name,icon],i)=>({id:'cat'+i,name,icon,accent:['#8bdd62','#d7bd78','#82b4cf','#d7a178','#db9eb0'][i%5]})),settings:defaultSettings(),focus:{duration:25,remaining:1500,deadline:null,running:false,task:'',goal:'One small step forward',sessionId:crypto.randomUUID(),history:[]},reminders:[],google:{configured:false,connected:false,account:'',calendars:[],lastSync:'',error:'',secureStorage:false,syncing:false},conflicts:[],dataPath:''};
 }
