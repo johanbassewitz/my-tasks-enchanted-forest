@@ -131,10 +131,10 @@ test('Daywhisper themes, private feedback form and study tasks survive desktop r
   await expect(page!.getByRole('alert')).toHaveText('Choose a valid date between years 0001 and 9999.');
   await expect(page!.getByRole('heading',{name:/^Week of /})).toBeVisible();
   await page!.getByRole('button',{name:'+ New entry',exact:true}).click();
-  await page!.getByLabel('Your entry',{exact:true}).fill('Keep this reflection safe.');
+  await page!.getByRole('textbox',{name:'Your entry',exact:true}).fill('Keep this reflection safe.');
   await page!.locator('.addons-page').getByLabel('Date',{exact:true}).fill('10000-01-01');
   await expect(page!.getByRole('status')).toHaveText('Choose a valid journal date between years 0001 and 9999.');
-  await expect(page!.getByLabel('Your entry',{exact:true})).toHaveValue('Keep this reflection safe.');
+  await expect(page!.getByRole('textbox',{name:'Your entry',exact:true})).toHaveValue('Keep this reflection safe.');
   await page!.getByRole('navigation',{name:'Optional packs'}).getByRole('button',{name:'Creator',exact:true}).click();
   await page!.getByRole('dialog').getByRole('button',{name:'Discard edits',exact:true}).click();
   await expect(page!.getByRole('textbox',{name:'Content title',exact:true})).toHaveCount(0);
