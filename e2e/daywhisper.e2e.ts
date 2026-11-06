@@ -132,7 +132,7 @@ test('Daywhisper themes, private feedback form and study tasks survive desktop r
   await expect(page!.getByRole('heading',{name:/^Week of /})).toBeVisible();
   await page!.getByRole('button',{name:'+ New entry',exact:true}).click();
   await page!.getByLabel('Your entry',{exact:true}).fill('Keep this reflection safe.');
-  await page!.getByLabel('Date',{exact:true}).fill('10000-01-01');
+  await page!.locator('.addons-page').getByLabel('Date',{exact:true}).fill('10000-01-01');
   await expect(page!.getByRole('status')).toHaveText('Choose a valid journal date between years 0001 and 9999.');
   await expect(page!.getByLabel('Your entry',{exact:true})).toHaveValue('Keep this reflection safe.');
   await page!.getByRole('navigation',{name:'Optional packs'}).getByRole('button',{name:'Creator',exact:true}).click();
@@ -140,6 +140,8 @@ test('Daywhisper themes, private feedback form and study tasks survive desktop r
   await expect(page!.getByRole('textbox',{name:'Content title',exact:true})).toHaveCount(0);
 
  }finally{
+  // Cleanup must not block on a legitimate unsaved-edits dialog after an assertion fails.
+  await app?.evaluate(({BrowserWindow})=>{for(const window of BrowserWindow.getAllWindows())window.destroy()}).catch(()=>{});
   await app?.close();
   await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});
  }

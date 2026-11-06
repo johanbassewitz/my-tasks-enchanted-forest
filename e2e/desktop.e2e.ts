@@ -20,7 +20,8 @@ test('native desktop navigation, task persistence and keyboard search',async()=>
   await expect(page.getByRole('textbox',{name:'Title',exact:true})).toHaveValue('Persistent desktop task');
   await page.getByRole('button',{name:'Add Task',exact:true}).click();
   await expect(page.getByRole('button',{name:'Edit Persistent desktop task',exact:true})).toBeVisible();
-  await page.getByRole('checkbox',{name:'Complete Persistent desktop task',exact:true}).check();
+  await page.getByRole('checkbox',{name:'Complete Persistent desktop task',exact:true}).click();
+  await expect(page.getByRole('checkbox',{name:'Uncomplete Persistent desktop task',exact:true})).toBeChecked();
   await app.close();
   app=await launch();page=await app.firstWindow();
   await expect(page.getByRole('checkbox',{name:'Uncomplete Persistent desktop task',exact:true})).toBeChecked();
@@ -29,5 +30,5 @@ test('native desktop navigation, task persistence and keyboard search',async()=>
   await page.keyboard.press('Escape');
   await page.keyboard.press('Control+n');
   await expect(page.getByRole('textbox',{name:'Quick add task'})).toBeVisible();
- }finally{await app.close();await rm(profile,{recursive:true,force:true});}
+ }finally{await app.evaluate(({BrowserWindow})=>{for(const window of BrowserWindow.getAllWindows())window.destroy()}).catch(()=>{});await app.close();await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
 });
