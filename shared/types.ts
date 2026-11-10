@@ -24,7 +24,7 @@ export interface Settings {
  theme:import('./themes').ThemeId;
  start:Page; time:'12'|'24'; week:'Monday'|'Sunday'; timezone:string; startWithWindows:boolean;
  startMinimized:boolean; closeToTray:boolean; reducedMotion:boolean; textScale:number;
- desktop:boolean; inApp:boolean; sound:boolean; defaultReminders:number[];
+ desktop:boolean; inApp:boolean; sound:boolean; reminderTone?:'moonbell'|'woodland'|'starlight'; soundVolume?:number; defaultReminders:number[];
  googleClientId:string; googleClientSecret:string; calendarId:string; syncMode:'two-way'|'push';
  syncCompleted:boolean; deleteGoogle:boolean; importExisting:boolean;
 }
@@ -52,6 +52,7 @@ export type Command =
  | {type:'notification.test'}
  | {type:'data.export'}|{type:'data.import'}|{type:'data.openFolder'};
 export interface DesktopAPI {
+ onSound(callback:(sound:{tone:string;volume:number})=>void):()=>void;
  sponsor():Promise<{name:string;message:string}|null>;
  openSponsor():Promise<void>;
 
