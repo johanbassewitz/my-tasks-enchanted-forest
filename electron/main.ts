@@ -36,7 +36,7 @@ let win:BrowserWindow|null=null,tray:Tray|null=null,repo:Repository,scheduler:Re
 function show(){if(!win)return;if(win.isMinimized())win.restore();win.show();win.focus();}
 function view():AppData{const data=repo.getData();data.dataPath=app.getPath('userData');data.settings.googleClientSecret='';return data;}
 function broadcast(){if(win&&!win.isDestroyed())win.webContents.send('desktop:data',view());}
-function alert(message:Alert){const settings=repo.getData().settings;if(settings.inApp)win?.webContents.send('desktop:alert',message);if(settings.desktop&&Notification.isSupported()){const note=new Notification({title:message.title,body:message.body,silent:!settings.sound,icon:join(app.getAppPath(),'build/icon.png')});note.on('click',()=>{show();win?.webContents.send('desktop:alert',message);});note.show();}}
+function alert(message:Alert){const settings=repo.getData().settings;if(settings.sound&&(settings.desktop||settings.inApp))win?.webContents.send('desktop:sound',{tone:settings.reminderTone||'moonbell',volume:settings.soundVolume??0.35});if(settings.inApp)win?.webContents.send('desktop:alert',message);if(settings.desktop&&Notification.isSupported()){const note=new Notification({title:message.title,body:message.body,silent:true,icon:join(app.getAppPath(),'build/icon.png')});note.on('click',()=>{show();win?.webContents.send('desktop:alert',message);});note.show();}}
 function trusted(event:Electron.IpcMainInvokeEvent){if(!win||event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame)throw new Error('Untrusted IPC sender');}
 async function command(input:unknown):Promise<AppData>{
  const c=commandSchema.parse(input) as Command;
@@ -56,7 +56,7 @@ async function command(input:unknown):Promise<AppData>{
  scheduler.tick();broadcast();return view();
 }
 function createWindow(){const saved=repo.getMeta<Electron.Rectangle>('window.bounds');const area=screen.getPrimaryDisplay().workArea;const bounds=saved&&screen.getAllDisplays().some(d=>saved.x<d.workArea.x+d.workArea.width&&saved.x+saved.width>d.workArea.x&&saved.y<d.workArea.y+d.workArea.height&&saved.y+saved.height>d.workArea.y)?saved:{width:Math.min(1440,area.width),height:Math.min(950,area.height)};
- win=new BrowserWindow({...bounds,minWidth:800,minHeight:600,frame:false,show:false,backgroundColor:'#102015',icon:join(app.getAppPath(),'build/icon.png'),webPreferences:{preload:join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+ win=new BrowserWindow({...bounds,minWidth:800,minHeight:600,frame:false,show:false,backgroundColor:'#102015',icon:join(app.getAppPath(),'build/icon.png'),webPreferences:{preload:join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true,autoplayPolicy:'no-user-gesture-required'}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',event=>event.preventDefault());
  win.webContents.on('will-prevent-unload',event=>{if(!win)return;const answer=dialog.showMessageBoxSync(win,{type:'question',buttons:['Keep editing','Discard edits'],defaultId:0,cancelId:0,title:'Keep your changes?',message:'Your current edits have not been saved.'});if(answer===1)event.preventDefault();else quitting=false;});
  win.on('resize',()=>{if(win&&!win.isMaximized())repo.setMeta('window.bounds',win.getBounds());});win.on('move',()=>{if(win&&!win.isMaximized())repo.setMeta('window.bounds',win.getBounds());});

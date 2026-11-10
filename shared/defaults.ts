@@ -4,7 +4,7 @@ import type {AppData,Item,Phase,Settings,Step} from './types';
 import {iso,shift} from './domain';
 const zone=()=>Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 export function defaultSettings():Settings {
- return {theme:'enchanted-forest',start:'Home',time:'12',week:'Monday',timezone:zone(),startWithWindows:false,startMinimized:false,closeToTray:true,reducedMotion:false,textScale:100,desktop:true,inApp:true,sound:false,defaultReminders:[10],googleClientId:'',googleClientSecret:'',calendarId:'',syncMode:'two-way',syncCompleted:false,deleteGoogle:true,importExisting:false};
+ return {theme:'enchanted-forest',start:'Home',time:'12',week:'Monday',timezone:zone(),startWithWindows:false,startMinimized:false,closeToTray:true,reducedMotion:false,textScale:100,desktop:true,inApp:true,sound:false,reminderTone:'moonbell',soundVolume:0.35,defaultReminders:[10],googleClientId:'',googleClientSecret:'',calendarId:'',syncMode:'two-way',syncCompleted:false,deleteGoogle:true,importExisting:false};
 }
 export function newItem(kind:'task'|'event'='task',date:string=iso()):Item {
  const now=new Date().toISOString();
