@@ -1,4 +1,4 @@
-export type Page = 'Home'|'Calendar'|'Focus'|'Categories'|'Tasks'|'Events'|'Reminders'|'Settings'|'Study'|'Packs'|'Shop';
+export type Page = 'Home'|'Calendar'|'Focus'|'Categories'|'Tasks'|'Events'|'Reminders'|'Settings'|'Study'|'Packs'|'Shop'|'AI';
 export type SyncState = 'Local only'|'Pending sync'|'Synced'|'Sync error'|'Conflict'|'Disconnected';
 export interface Item {
  id:string; kind:'task'|'event'; title:string; date:string; time:string; end:string; timezone:string;
@@ -33,6 +33,7 @@ export interface ReminderRecord {id:string; itemId:string; occurrenceDate:string
 export interface Conflict {id:string; itemId:string; local:Item; remote:Item; reason:string}
 export interface AppData {study:import('./study').StudyState; addons:import('./addons').AddonsState;version:number; items:Item[]; phases:Phase[]; categories:Category[]; settings:Settings; focus:FocusState; reminders:ReminderRecord[]; google:GoogleStatus; conflicts:Conflict[]; dataPath:string}
 export type Command =
+ | ({type:'ai.import'} & import('./cloud').AiResult)
  | {type:'study.save';study:import('./study').StudyState}
  | {type:'study.generate'}
  | {type:'addons.save';addons:import('./addons').AddonsState}
@@ -52,6 +53,14 @@ export type Command =
  | {type:'notification.test'}
  | {type:'data.export'}|{type:'data.import'}|{type:'data.openFolder'};
 export interface DesktopAPI {
+ cloudAccount():Promise<import('./cloud').CloudAccount>;
+ requestSignIn(email:string):Promise<void>;
+ verifySignIn(input:{email:string;code:string}):Promise<import('./cloud').CloudAccount>;
+ signOut():Promise<import('./cloud').CloudAccount>;
+ billingPortal():Promise<void>;
+ purchasesDisabled(value?:boolean):Promise<boolean>;
+ generateTasks(input:import('./cloud').AiInput):Promise<import('./cloud').AiResult>;
+
  onSound(callback:(sound:{tone:string;volume:number})=>void):()=>void;
  sponsor():Promise<{name:string;message:string}|null>;
  openSponsor():Promise<void>;

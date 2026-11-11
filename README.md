@@ -2,7 +2,7 @@
 
 A calm Windows planner with local tasks, calendar events, recurring schedules, subtasks, project phases, reminders, focus sessions, search and recoverable trash. Formerly My Tasks — Enchanted Forest.
 
-This branch prepares version 1.2.0 for testing. It is not a published or certified Microsoft Store release. See [release gates](docs/store/PUBLISHING-CHECKLIST.md).
+This branch prepares version 1.3.0 for testing. It is not a published or certified Microsoft Store release. See [release gates](docs/store/PUBLISHING-CHECKLIST.md).
 
 ## What's included
 
@@ -11,10 +11,11 @@ This branch prepares version 1.2.0 for testing. It is not a published or certifi
 - Study planning: subjects, chapters, exam dates, daily availability, revision tasks and recorded focus time.
 - Creator pipeline, freelancer project tracker, habit history and private journal packs.
 - Automatic rolling local backups, a safety snapshot before restore, and manual export/import.
+- Optional AI goal/notes-to-tasks suggestions with explicit consent, review before saving, and account-based credits.
 - In-app feedback form with optional reply email; no planner data attached.
-- Store purchase/restore integration and optional labeled sponsorship placement.
+- Paddle-only purchase/restore integration and optional labeled sponsorship placement.
 
-Commercial services are disabled until configured. Preview mode unlocks the themes and packs for testing; purchases are unavailable and nobody is charged. The feedback button cannot send until its HTTPS service is deployed. No advertiser or advertising network is connected. Supporter subscriptions are designed to remove sponsorship and unlock themes; packs are separate purchases. Prices remain unset.
+Commercial services are disabled until configured. See [Paddle and AI deployment](services/cloud/README.md). AI and email sign-in cannot work until the backend and provider accounts are connected. Preview mode unlocks the themes and packs for testing; purchases are unavailable and nobody is charged. The feedback button cannot send until its HTTPS service is deployed. No advertiser or advertising network is connected. Supporter subscriptions are designed to remove sponsorship and unlock themes; packs are separate purchases. Prices remain unset.
 
 ## Notifications and storage
 
@@ -46,7 +47,7 @@ npm run dist:installer
 npm run dist:store
 ```
 
-The candidate workflow builds an unsigned NSIS desktop installer and a Store APPX preview, plus UI screenshots. A PREVIEW package uses test identity and is not for submission. Configure the reserved Store identity and products, then pass `npm run check:store -- --submission` before building a submission candidate. Store purchases, packaged startup and certification need testing with the real account.
+The candidate workflow builds an unsigned NSIS desktop installer and a Store APPX preview, plus UI screenshots. A PREVIEW package uses test identity and is not for submission. Configure the reserved Store identity and Paddle backend, then pass `npm run check:store -- --submission` before building a submission candidate. Paddle sandbox purchases, packaged startup and certification need testing with the real account.
 
 The renderer-only `npm run dev` preview cannot save. Native Electron tests use isolated data directories. Legacy PowerShell launch scripts remain for development compatibility; use the packaged installer for distribution.
 

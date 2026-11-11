@@ -5,11 +5,14 @@ This is a release candidate, not certification or permission to publish.
 ## Account and commercial setup
 - [ ] Reserve Daywhisper in the owner's existing Microsoft Partner Center account.
 - [ ] Copy exact Identity Name, Publisher (CN=...), Publisher Display Name into config/store.json.
-- [ ] Create durable add-ons for two themes and five packs; create monthly/yearly supporter subscriptions.
-- [ ] Set unique Store product IDs, configure regional prices and cancellation disclosures.
-- [ ] Test purchase/cancel/restore/subscription expiry with Store test accounts and private flight.
-- [ ] Decide/approve final prices; earlier low prices were experiments, not finalized listing prices.
-- [ ] Set config/store.json enabled=true only after configuring products and testing live licenses.
+- [ ] Configure Paddle products/prices for themes, packs, supporter subscriptions and 50-action AI credits.
+- [ ] Deploy services/cloud with D1, verified email sender and secret keys. Start in Paddle sandbox.
+- [ ] Configure config/cloud.json HTTPS API, approved checkout origins and offline-license public key.
+- [ ] Test verified sign-in, checkout cancel/complete, restore, refunds, disputes and subscription expiry.
+- [ ] Test duplicate/out-of-order webhooks, concurrent AI quota use, errors and free allowance reset.
+- [ ] Set a capped OpenRouter key, selected model and server-wide request budget; measure real costs.
+- [ ] Confirm final prices and allowance. Preview uses five free successful actions/month as a configurable pilot default.
+- [ ] Disable preview, enable configured services only after sandbox validation. Disclose Paddle in Partner Center.
 - [ ] Configure private feedback server secrets/verified sender, deploy HTTPS endpoint, verify inbox receipt.
 - [ ] Finalize privacy retention/private contact details and publish the privacy notice.
 - [ ] Arrange an advertiser/provider before enabling sponsorship; never embed network ad scripts in renderer.
@@ -22,7 +25,7 @@ This is a release candidate, not certification or permission to publish.
 - [ ] Verify tray close/quit, notification permissions, sleep/resume, missed reminders, startup disabled by Windows.
 - [ ] Verify Store updates preserve data and use a valid increasing four-part package version with final segment zero.
 - [ ] Verify restoring malformed backups never loses live data; export independent backup before uninstall.
-- [ ] Verify packaged helper identity, Store checkout owner window, offline OS license behavior and startup task.
+- [ ] Verify packaged startup helper, Paddle browser checkout, signed offline-license expiry and purchase-disable setting.
 - [ ] Check third-party dependency licenses and prove rights to original forest artwork/icon/fonts before sale.
 - [ ] Review all Store description claims against actual enabled features.
 - [ ] Run npm run check:store -- --submission. This intentionally fails while identity/services are missing.

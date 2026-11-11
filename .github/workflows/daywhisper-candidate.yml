@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: npm run check:cloud
       - name: Validate packaging
         run: |
           npm run check:release
@@ -45,9 +46,9 @@ jobs:
       - name: Verify helper fails safely without package identity
         shell: pwsh
         run: |
-          $output = & ./native/Daywhisper.Store/publish/Daywhisper.Store.exe status --hwnd 1
+          $output = & ./native/Daywhisper.Store/publish/Daywhisper.Store.exe startup --action status
           $response = $output | ConvertFrom-Json
-          if ($response.ok -ne $false) { throw 'Unpackaged Store helper must not grant access' }
+          if ($response.ok -ne $false) { throw 'Unpackaged Store helper must reject startup control' }
           $global:LASTEXITCODE = 0
       - name: Build desktop installer
         run: npm run dist:installer

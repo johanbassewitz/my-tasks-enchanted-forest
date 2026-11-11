@@ -37,3 +37,8 @@ native/**/bin/
 native/**/obj/
 native/**/publish/
 artifacts/
+
+# Local Cloudflare credentials and emulated storage
+.dev.vars
+.dev.vars.*
+.wrangler/

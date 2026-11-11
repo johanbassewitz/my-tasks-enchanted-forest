@@ -29,3 +29,16 @@ See docs/store/PUBLISHING-CHECKLIST.md. Preview packages are not submission pack
 
 ## Verification outcome — 2026-11-06
 The full Windows pipeline passed on production-preparation commit 817eeb9: 123 unit tests, two native UI tests, .NET helper, NSIS and APPX builds. Both release-preparation branches are saved. See docs/store/VERIFICATION.md for evidence and remaining account/device gates. The owner reiterated preparation only: do not publish, merge main, tag or submit. No live commercial service was activated.
+
+## 1.3.0 Paddle and AI change (10 November 2026)
+User completed 1.2.1 testing and requested Paddle-only payments and optional AI credits.
+Microsoft commerce has been removed; Store packaging and Windows startup remain.
+Desktop cloud session is protected separately from planner backup data. Paddle checkout
+uses backend-created transactions and verified entitlements. AI goal/notes-to-tasks
+requires consent and reviewed local import. Pilot allowance: five/month; paid pack:
+50 bounded successful actions. Prices/model are operator configuration, not finalized.
+Cloudflare Worker + D1 source is prepared; no hosting, email, Paddle or OpenRouter
+credentials have been supplied or deployed. No live charge, email or AI call is authorized
+by merely running the tests. Core local planning and explicit preview packs stay usable.
+Live services, sandbox end-to-end validation and final privacy/operator details remain
+release gates. Do not publish. Record Windows run evidence separately.

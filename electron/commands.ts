@@ -1,3 +1,4 @@
+import {aiImportSchema} from '../shared/cloud';
 import {studySchema,buildStudySchedule} from '../shared/study';
 import {addonsSchema} from '../shared/addons';
 import {newItem} from '../shared/defaults';
@@ -10,6 +11,7 @@ import type {Command,Item} from '../shared/types';
 
 const id=z.string().min(1).max(1000),date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>DateTime.fromISO(value).isValid),scope=z.enum(['series','occurrence']).optional();
 export const commandSchema=z.discriminatedUnion('type',[
+ aiImportSchema.extend({type:z.literal('ai.import')}).strict(),
  z.object({type:z.literal('study.save'),study:studySchema}).strict(),
  z.object({type:z.literal('study.generate')}).strict(),
  z.object({type:z.literal('addons.save'),addons:addonsSchema}).strict(),
@@ -28,6 +30,16 @@ export const commandSchema=z.discriminatedUnion('type',[
 export function applyCommand(repo:Repository,input:unknown):void {
  const c=commandSchema.parse(input) as Command;
   repo.update(d=>{
+   if(c.type==='ai.import'){
+    const marker='ai-import:'+c.requestId;if(repo.getMeta(marker))return;
+    if(d.items.length+c.tasks.length>100000)throw Error('The task limit has been reached.');
+    for(const [index,suggestion] of c.tasks.entries()){
+     const item={...newItem('task',suggestion.date),id:`ai-${c.requestId}-${index}`,title:suggestion.title,notes:`${suggestion.notes}\nEstimated focus: ${suggestion.minutes} minutes.`.trim(),timezone:d.settings.timezone,category:'Other',order:d.items.length};
+     if(!d.items.some(existing=>existing.id===item.id))d.items.push(validateItem(item));
+    }
+    repo.setMeta(marker,true);
+   }
+
    if(c.type==='addons.save')d.addons=c.addons;
    if(c.type==='study.save')d.study={...c.study,sessions:d.study.sessions};
    if(c.type==='study.generate'){

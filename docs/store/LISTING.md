@@ -35,3 +35,6 @@ is included.
 - Review notes: Electron full-trust desktop application; tray keeps local reminders alive;
   Quit explicitly exits. Local SQLite and JSON backups are outside the installation path.
 - Do not submit a PREVIEW package or promise live commerce, feedback or ads before validation.
+
+## 1.3.0 optional online services
+Paddle is the exclusive billing provider, including the Store edition. Optional AI planning sends only user-submitted text, date and time zone to OpenRouter through our backend; suggestions require review. Core planner and existing Study scheduler remain local. Do not advertise live AI, purchases or allowance prices until backend configuration and sandbox validation are complete.
