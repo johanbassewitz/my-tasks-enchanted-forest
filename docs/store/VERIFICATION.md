@@ -30,3 +30,7 @@ This is a verified testing candidate, not a submission-ready commercial package.
 The submission configuration check intentionally fails on the missing real Store identity. After account setup, rebuild and repeat the relevant tests. Reminders require the app to run (including tray mode); they cannot fire while fully quit or the PC is off. Data and local backups are not encrypted by the application.
 
 Vite's nonblocking module-format and bundle-size warnings remain. No automatic updater is claimed for the direct installer; Store updates are handled by Store distribution after acceptance.
+
+## 1.3.0 supersedes earlier Store-commerce verification
+
+Paddle now replaces the Microsoft billing/license implementation described in the historical 1.2.0 notes above. The native helper supports Windows startup only. New payment/AI services remain disabled until deployed and configured; no live checkout, email or model call has been verified. Use services/cloud/README.md and PUBLISHING-CHECKLIST.md for current setup and validation.

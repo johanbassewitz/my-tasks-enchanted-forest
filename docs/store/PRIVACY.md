@@ -1,6 +1,6 @@
 # Daywhisper privacy notice
 
-Last updated: 6 November 2026
+Last updated: 11 November 2026 — operational draft; finalize before service activation
 
 Daywhisper keeps planning data—tasks, events, chapters, habits, journal entries,
 client/project records, focus history and preferences—in a local SQLite database
@@ -15,7 +15,7 @@ files yourself. Uninstalling the direct desktop edition preserves planning data;
 packaged Windows app removal and Windows storage management may behave differently.
 Export to a separate location before uninstalling or switching editions.
 
-The app has no Google Calendar integration and does not upload planner records.
+The app has no Google Calendar integration and does not automatically upload planner records.
 It does not include analytics or an advertising tracking SDK.
 
 ## Optional feedback
@@ -33,11 +33,29 @@ Before service activation, the operator must set and publish actual feedback ret
 and deletion practices, a private contact method, and verify provider account settings.
 This section is a release-blocking draft until those operational details are supplied.
 
-## Optional Store purchases
-Microsoft Store handles checkout, billing and Store license status. Daywhisper reads
-product prices and active licenses to enable purchased themes/packs and subscriptions.
-Payment-card details are not collected by Daywhisper. Microsoft account and Store
-privacy terms apply. Core planning and data exports do not require a paid feature.
+## Optional account, Paddle purchases and AI
+Paddle is the sole payment processor in both editions. Checkout opens in your browser.
+The app does not receive payment-card details. Our backend records your verified email,
+purchase identifiers, entitlements and AI usage/credits so you can restore access.
+Email sign-in codes are sent through the configured email delivery provider. Account
+sessions are stored separately from planner data, using Windows-protected encryption;
+sessions are excluded from planner exports. Core planning does not require sign-in.
+
+AI is optional. Only text you enter in the AI planning form, the date and time zone are
+sent through the configured Cloudflare service to OpenRouter and its selected model
+provider. Other tasks, journal entries and attachments are not automatically included.
+Review all suggestions before adding them. The backend temporarily retains generated
+results to safely retry requests without charging twice. Prompts are not intentionally
+logged by application code. Provider network logging and retention depend on deployed
+settings and provider policies. Request routing excludes providers allowing data
+collection. AI credits are tracked by account, not installation; reinstalling does not
+reset usage. Your core planner continues working offline.
+
+Before activation, publish the operator's identity, private contact/deletion process,
+actual retention periods (including account, billing, IP/rate-limit records and generated
+results), provider notices, and final terms. Do not claim zero cloud storage or no
+third-party processing for these optional services. Current preview has no active
+checkout, sign-in delivery or AI endpoint.
 
 ## Sponsored placements
 When configured, a small labeled sponsor placement can appear on Home. It is not

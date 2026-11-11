@@ -2,14 +2,14 @@ import {test,expect,_electron as electron,type ElectronApplication,type Page} fr
 import {mkdir,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
-import storeConfig from '../config/store.json';
+import cloudConfig from '../config/cloud.json';
 import packageInfo from '../package.json';
 
 // This smoke test exercises the distributable preview edition, without Store credentials
 // or live feedback delivery. Every persisted change is made through the visible UI.
 test('Daywhisper themes, private feedback form and study tasks survive desktop restart',async({},testInfo)=>{
  test.setTimeout(120_000);
- test.skip(storeConfig.enabled||Boolean(packageInfo.feedbackEndpoint),'This scenario requires the offline preview build.');
+ test.skip(cloudConfig.enabled||Boolean(packageInfo.feedbackEndpoint),'This scenario requires the offline preview build.');
  const profile=await mkdtemp(join(tmpdir(),'daywhisper-e2e-'));
  const screenshotDir=resolve('artifacts/screenshots');
  await mkdir(screenshotDir,{recursive:true});
@@ -53,6 +53,11 @@ test('Daywhisper themes, private feedback form and study tasks survive desktop r
   const purchaseButtons=page!.getByRole('button',{name:'Available in preview',exact:true});
   await expect(purchaseButtons).toHaveCount(9);
   for(const button of await purchaseButtons.all())await expect(button).toBeDisabled();
+
+  await expect(page!.getByRole('button',{name:'Not connected yet',exact:true})).toBeDisabled();
+  await navigate('AI');
+  await expect(page!.getByRole('button',{name:'Generate task suggestions',exact:true})).toBeDisabled();
+  await expect(page!.getByText('AI is not connected in this preview.',{exact:false})).toBeVisible();
 
   // Closing an isolated preview must not alter the active theme.
   await navigate('Settings');

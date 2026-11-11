@@ -1,7 +1,8 @@
 const fs=require('node:fs');
 const base=require('js-yaml').load(fs.readFileSync(require('node:path').join(__dirname,'electron-builder.yml'),'utf8'));
 const store=require('./config/store.json');
-const preview=!store.enabled||!store.identityName||!store.publisher||!store.publisherDisplayName||Object.values(store.products).some(id=>!id);
+const cloud=require('./config/cloud.json');
+const preview=cloud.preview||!store.identityName||!store.publisher||!store.publisherDisplayName;
 module.exports={...base,
  directories:{...base.directories,output:'release-store'},
  win:{...base.win,target:['appx']},

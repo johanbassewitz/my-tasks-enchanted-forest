@@ -3,7 +3,10 @@ import {activeSponsor} from '../shared/sponsor';
 import {isSupporter} from '../shared/commerce';
 import {StoreBridge} from './store-bridge';
 import {CommerceService} from './commerce';
-import storeConfig from '../config/store.json';
+import {CloudClient} from './cloud-client';
+import {ProtectedSessionVault} from './session-vault';
+import cloudConfig from '../config/cloud.json';
+
 import {productKeys} from '../shared/commerce';
 import { app, BrowserWindow, ipcMain, Menu, Tray, Notification, powerMonitor, shell, dialog, screen } from 'electron';
 import { FeedbackService } from './feedback';
@@ -26,7 +29,7 @@ app.setPath('userData',join(app.getPath('appData'),'My Tasks'));
 if(process.env.MY_TASKS_DATA_DIR){mkdirSync(process.env.MY_TASKS_DATA_DIR,{recursive:true});app.setPath('userData',process.env.MY_TASKS_DATA_DIR);}
 
 const storeBridge=new StoreBridge(join(process.resourcesPath,'store','Daywhisper.Store.exe'));
-const commerce=new CommerceService(storeConfig,!!process.windowsStore,storeBridge,()=>{if(!win)throw Error('Window unavailable');const buffer=win.getNativeWindowHandle();return (buffer.length===8?buffer.readBigUInt64LE():BigInt(buffer.readUInt32LE())).toString()});
+let cloud:CloudClient,commerce:CommerceService;
 async function configureStartup(settings:AppData['settings']){
  if(process.windowsStore){const result=await storeBridge.startup(settings.startWithWindows?'enable':'disable');if(settings.startWithWindows!==['Enabled','EnabledByPolicy'].includes(result.state))throw Error(settings.startWithWindows?'Windows has disabled startup. Enable Daywhisper in Windows Settings → Apps → Startup.':'Windows policy keeps Daywhisper startup enabled. Contact your administrator to change this setting.');}
  else app.setLoginItemSettings({openAtLogin:settings.startWithWindows,args:settings.startMinimized?['--minimized']:[]});
@@ -70,7 +73,17 @@ if(!app.requestSingleInstanceLock())app.quit();else{
  void app.whenReady().then(()=>{
   if(!process.windowsStore)app.setAppUserModelId('com.mytasks.forest');mkdirSync(app.getPath('userData'),{recursive:true});const databasePath=join(app.getPath('userData'),'my-tasks.sqlite');const fresh=!existsSync(databasePath);repo=new Repository(databasePath);if(fresh)repo.update(data=>{data.items=[];});
   backups=new RollingBackups(repo,join(app.getPath('userData'),'backups'),{onError:()=>alert({title:'Backup needs attention',body:'Could not save an automatic backup. Check free disk space and folder permissions.'})});
+  cloud=new CloudClient(cloudConfig,new ProtectedSessionVault(join(app.getPath('userData'),'cloud-session.enc')));
+  commerce=new CommerceService(cloud,url=>shell.openExternal(url));
   scheduler=new ReminderScheduler(repo,alert);createWindow();
+  ipcMain.handle('cloud:account',event=>{trusted(event);return cloud.account()});
+  ipcMain.handle('cloud:requestSignIn',(event,email)=>{trusted(event);return cloud.requestCode(email)});
+  ipcMain.handle('cloud:verifySignIn',(event,input)=>{trusted(event);return cloud.verifyCode(input)});
+  ipcMain.handle('cloud:signOut',event=>{trusted(event);return cloud.logout()});
+  ipcMain.handle('cloud:generate',(event,input)=>{trusted(event);return cloud.generate(input)});
+  ipcMain.handle('cloud:portal',async event=>{trusted(event);await shell.openExternal(await cloud.portal())});
+  ipcMain.handle('cloud:purchasesDisabled',(event,value)=>{trusted(event);if(value!==undefined)cloud.setPurchasesDisabled(z.boolean().parse(value));return cloud.purchasesDisabled});
+
   ipcMain.handle('desktop:sponsor',async event=>{trusted(event);const sponsor=activeSponsor(sponsorConfig);if(!sponsor||isSupporter(await commerce.status()))return null;return {name:sponsor.name,message:sponsor.message};});
   ipcMain.handle('desktop:openSponsor',async event=>{trusted(event);const sponsor=activeSponsor(sponsorConfig);if(sponsor)await shell.openExternal(sponsor.url);});
   ipcMain.handle('desktop:commerce',event=>{trusted(event);return commerce.status()});

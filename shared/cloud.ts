@@ -1,0 +1,13 @@
+import {z} from 'zod';
+const validDate=(value:string)=>{if(!value)return true;const d=new Date(value+'T00:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===value};
+export const aiInputSchema=z.object({requestId:z.string().uuid(),prompt:z.string().trim().min(5).max(4000),today:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),timezone:z.string().min(1).max(100),consent:z.literal(true)}).strict();
+export type AiInput=z.infer<typeof aiInputSchema>;
+export const aiTaskSchema=z.object({title:z.string().trim().min(1).max(150),notes:z.string().max(1000),date:z.string().regex(/^(|\d{4}-\d{2}-\d{2})$/).refine(validDate,'Choose a valid calendar date'),minutes:z.number().int().min(5).max(480)}).strict();
+export const aiResultSchema=z.object({requestId:z.string().uuid(),tasks:z.array(aiTaskSchema).min(1).max(15)}).strict();
+export type AiResult=z.infer<typeof aiResultSchema>;
+export const cloudAccountSchema=z.object({configured:z.boolean(),email:z.string().max(254).nullable(),freeRemaining:z.number().int().min(0),paidRemaining:z.number().int().min(0),freeLimit:z.number().int().min(0),resetAt:z.string(),aiAvailable:z.boolean(),error:z.string().max(500).optional()});
+export type CloudAccount=z.infer<typeof cloudAccountSchema>;
+export const emailSchema=z.string().trim().toLowerCase().email().max(254);
+export const verifyCodeSchema=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/)}).strict();
+export const sessionResponseSchema=z.object({token:z.string().min(32).max(500)});
+export const aiImportSchema=z.object({requestId:z.string().uuid(),tasks:z.array(aiTaskSchema).min(1).max(15)}).strict();

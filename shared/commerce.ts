@@ -1,7 +1,8 @@
-export const productKeys=['midnight-observatory','amber-hearth','study','creator','freelancer','habits','journal','supporter-monthly','supporter-yearly'] as const;
+export const productKeys=['midnight-observatory','amber-hearth','study','creator','freelancer','habits','journal','supporter-monthly','supporter-yearly','ai-credits-50'] as const;
 export type ProductKey=typeof productKeys[number];
-export interface CommerceStatus {mode:'preview'|'store'|'unavailable';owned:ProductKey[];prices:Partial<Record<ProductKey,string>>;error?:string}
-export const catalog:ReadonlyArray<{key:ProductKey;name:string;description:string;kind:'theme'|'pack'|'subscription'}>=[
+export interface CommerceStatus {mode:'preview'|'paddle'|'unavailable';owned:ProductKey[];prices:Partial<Record<ProductKey,string>>;available?:ProductKey[];license?:{payload:string;signature:string};error?:string}
+export const catalog:ReadonlyArray<{key:ProductKey;name:string;description:string;kind:'theme'|'pack'|'subscription'|'credits'}>=[
+ {key:'ai-credits-50',name:'50 AI actions',description:'50 additional goal-to-task generations. Review every suggestion before saving. Requires an online account.',kind:'credits'},
  {key:'midnight-observatory',name:'Midnight Observatory',description:'Indigo nights and silver constellations. Own this theme permanently.',kind:'theme'},
  {key:'amber-hearth',name:'Amber Hearth',description:'A warm fireside workspace. Own this theme permanently.',kind:'theme'},
  {key:'study',name:'Study Pack',description:'Subjects, chapters, exam planning and study focus totals.',kind:'pack'},
